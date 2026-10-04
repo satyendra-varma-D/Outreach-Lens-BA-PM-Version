@@ -233,28 +233,62 @@ function FilterBar({ placeholder = "Search..." }: { placeholder?: string }) {
   return <div className="filter-bar"><div className="filter-search"><Icon name="search" /><input placeholder={placeholder} /></div><Button variant="secondary" icon="filter">Filters <Badge tone="orange">2</Badge></Button><Button variant="secondary">Status <Icon name="chevron" size={14} /></Button><Button variant="secondary">Therapeutic Area <Icon name="chevron" size={14} /></Button><Button variant="ghost">Clear all</Button><div className="spacer" /><Button variant="secondary">Save view</Button></div>;
 }
 
-function Campaigns({ setPage }: { setPage: (p: Page) => void }) {
-  return <div className="page"><PageHeader title="Research Campaigns" subtitle="Define and preserve the research context used by the Intelligence Engine."><Button icon="plus" onClick={() => setPage("create-campaign")}>Create Campaign</Button></PageHeader><div className="context-banner"><Icon name="shield" /><div><strong>Campaigns preserve research context — they do not execute outreach.</strong><span>Accounts and intelligence reports are created through a Research Run.</span></div><button>Learn more</button></div><FilterBar placeholder="Search campaigns..." /><Card className="table-card campaign-table"><div className="table-scroll"><table><thead><tr><th>Campaign name</th><th>Research purpose</th><th>Product / solution</th><th>Target account type</th><th>Therapeutic area</th><th>Geography</th><th>Runs</th><th>Created</th><th>Status</th><th /></tr></thead><tbody>{campaignRows.map((r) => <tr key={r[0]}><td><button className="table-link">{r[0]}</button></td><td className="purpose-cell">{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td><td><strong>{r[6]}</strong></td><td>{r[7]}</td><td><Badge tone={r[8] === "Active" ? "success" : "neutral"}>{r[8]}</Badge></td><td><Button variant="icon" icon="more" /></td></tr>)}</tbody></table></div><div className="table-footer"><span>Showing 3 of 12 campaigns</span><div><Button variant="secondary">Previous</Button><Button variant="secondary">Next</Button></div></div></Card></div>;
+function Campaigns({ setPage, campaigns = campaignRows, successMessage, onClearSuccess }: { setPage: (p: Page) => void; campaigns?: string[][]; successMessage?: string | null; onClearSuccess?: () => void }) {
+  return <div className="page">
+    {successMessage && (
+      <div className="success-banner" style={{ marginBottom: "18px", padding: "12px 18px", background: "var(--emerald-50)", border: "1px solid #a7f3d0", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#065f46" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "var(--emerald-500)", color: "white", display: "grid", placeItems: "center" }}><Icon name="check" size={14} /></span>
+          <div>
+            <strong style={{ display: "block", fontSize: "13px" }}>Campaign created successfully!</strong>
+            <span style={{ fontSize: "12px", color: "#047857" }}>{successMessage}</span>
+          </div>
+        </div>
+        {onClearSuccess && <button onClick={onClearSuccess} style={{ border: 0, background: "transparent", cursor: "pointer", color: "#047857" }}><Icon name="close" size={16} /></button>}
+      </div>
+    )}
+    <PageHeader title="Research Campaigns" subtitle="Define and preserve the research context used by the Intelligence Engine."><Button icon="plus" onClick={() => setPage("create-campaign")}>Create Campaign</Button></PageHeader><div className="context-banner"><Icon name="shield" /><div><strong>Campaigns preserve research context — they do not execute outreach.</strong><span>Accounts and intelligence reports are created through a Research Run.</span></div><button>Learn more</button></div><FilterBar placeholder="Search campaigns..." /><Card className="table-card campaign-table"><div className="table-scroll"><table><thead><tr><th>Campaign name</th><th>Research purpose</th><th>Product / solution</th><th>Target account type</th><th>Therapeutic area</th><th>Geography</th><th>Runs</th><th>Created</th><th>Status</th><th /></tr></thead><tbody>{campaigns.map((r) => <tr key={r[0]}><td><button className="table-link">{r[0]}</button></td><td className="purpose-cell">{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td><td><strong>{r[6]}</strong></td><td>{r[7]}</td><td><Badge tone={r[8] === "Active" ? "success" : "neutral"}>{r[8]}</Badge></td><td><Button variant="icon" icon="more" /></td></tr>)}</tbody></table></div><div className="table-footer"><span>Showing {campaigns.length} of {campaigns.length} campaigns</span><div><Button variant="secondary">Previous</Button><Button variant="secondary">Next</Button></div></div></Card></div>;
 }
 
 const wizardSteps = ["Research Context", "Product Context", "Target Account", "Research Parameters", "Supporting Documents", "Review"];
-function CreateCampaign({ setPage }: { setPage: (p: Page) => void }) {
+function CreateCampaign({ setPage, onSave }: { setPage: (p: Page) => void; onSave: (campaign: string[]) => void }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("US Oncology Hospital Expansion");
+  const [objective, setObjective] = useState("Identify high-potential US oncology health systems with relevant treatment capacity for Product X.");
+  const [product, setProduct] = useState("OncoNova X");
+  const [therapy, setTherapy] = useState("Oncology");
+  const [accountType, setAccountType] = useState("Hospital / Health System");
+  const [geography, setGeography] = useState("United States");
+
+  const handleSave = () => {
+    const newCampaign = [
+      name || "New Research Campaign",
+      objective || "Identify high-potential target accounts.",
+      product || "OncoNova X",
+      accountType || "Hospital / Health System",
+      therapy || "Oncology",
+      geography || "United States",
+      "0",
+      "Today",
+      "Active"
+    ];
+    onSave(newCampaign);
+  };
+
   return <div className="page wizard-page"><div className="back-link" onClick={() => setPage("campaigns")}><Icon name="arrow" /> Back to Campaigns</div><PageHeader title="Create Research Campaign" subtitle="Build a reusable research configuration for account discovery." /><div className="wizard-layout"><aside className="wizard-steps">{wizardSteps.map((s, i) => <button key={s} className={`${i === step ? "active" : ""} ${i < step ? "complete" : ""}`} onClick={() => setStep(i)}><span>{i < step ? <Icon name="check" size={14} /> : i + 1}</span><div><strong>{s}</strong><small>{["Define objectives", "Describe your product", "Choose organization types", "Set discovery criteria", "Add internal context", "Confirm configuration"][i]}</small></div></button>)}</aside><Card className="wizard-card">
     <div className="wizard-top"><div><span>STEP {step + 1} OF 6</span><h2>{wizardSteps[step]}</h2><p>{["Tell the Intelligence Engine what you are trying to learn and why.", "Provide factual product context to assess account relevance.", "Select the organization type this research should discover.", "Define where and how the Intelligence Engine should search.", "Provide approved materials and internal research context.", "Review the complete research configuration before saving."][step]}</p></div><span className="autosave"><Icon name="check" size={13} /> Draft saved</span></div>
     {step === 0 && <div className="form-stack"><div className="form-grid"><Field label="Campaign name" value={name} onChange={setName} /><SelectField label="Sales objective"><option>New Customer Acquisition</option><option>Product Launch</option><option>Competitive Displacement</option><option>Market Expansion</option></SelectField></div><TextArea label="Research objective" placeholder="Identify high-potential US oncology health systems with relevant treatment capacity..." /><TextArea label="Business purpose" placeholder="Explain how this research will support the commercial team..." /><TextArea label="What are we trying to learn?" placeholder="Describe the specific account characteristics, signals, and evidence needed." /></div>}
-    {step === 1 && <div className="form-stack"><div className="form-grid"><Field label="Product / brand" value="OncoNova X" /><Field label="Generic name" placeholder="Enter generic name" /><SelectField label="Therapeutic area"><option>Oncology</option><option>Immunology</option><option>Rare Disease</option></SelectField><Field label="Indication" value="HER2-positive breast cancer" /><SelectField label="Modality"><option>Monoclonal antibody</option><option>Small molecule</option></SelectField><SelectField label="Product stage"><option>Commercial</option><option>Phase III</option><option>Pre-launch</option></SelectField></div><TextArea label="Product value proposition" /><TextArea label="Key differentiators" /><div className="info-box"><Icon name="shield" /><p><strong>Evidence and claims policy</strong>These materials provide context to the Intelligence Engine. AI-generated insights must remain evidence-backed and must not invent product claims.</p></div></div>}
-    {step === 2 && <div className="account-type-grid">{["Hospital / Health System", "IDN", "Specialty Clinic", "Physician / HCP", "Payer", "PBM", "Specialty Pharmacy", "GPO", "Distributor", "Government / Institutional", "Other"].map((x, i) => <button className={i === 0 ? "selected" : ""} key={x}><span><Icon name={i < 4 ? "activity" : "briefcase"} /></span><strong>{x}</strong>{i === 0 && <Icon name="check" size={15} />}</button>)}</div>}
-    {step === 3 && <div className="form-stack"><div className="form-grid"><SelectField label="Geography"><option>United States</option><option>Canada</option><option>United States & Canada</option></SelectField><Field label="State / province" value="Ohio, New York, California, Texas" /><Field label="Company size" value="1,000+ employees" /><Field label="Revenue range" placeholder="Optional" /><Field label="Therapeutic area" value="Oncology" /><Field label="Specialty" value="Medical Oncology, Surgical Oncology" /></div><TextArea label="Relevant business characteristics" placeholder="Academic medical center, active clinical research, specialty expansion..." /><details className="advanced"><summary>Advanced Research Criteria <Icon name="chevron" /></summary><div className="form-grid"><Field label="Minimum facilities" placeholder="e.g. 5" /><Field label="Signal recency" value="Last 12 months" /></div></details></div>}
+    {step === 1 && <div className="form-stack"><div className="form-grid"><Field label="Product / brand" value={product} onChange={setProduct} /><Field label="Generic name" placeholder="Enter generic name" /><SelectField label="Therapeutic area" value={therapy} onChange={setTherapy}><option>Oncology</option><option>Immunology</option><option>Rare Disease</option></SelectField><Field label="Indication" value="HER2-positive breast cancer" /><SelectField label="Modality"><option>Monoclonal antibody</option><option>Small molecule</option></SelectField><SelectField label="Product stage"><option>Commercial</option><option>Phase III</option><option>Pre-launch</option></SelectField></div><TextArea label="Product value proposition" /><TextArea label="Key differentiators" /><div className="info-box"><Icon name="shield" /><p><strong>Evidence and claims policy</strong>These materials provide context to the Intelligence Engine. AI-generated insights must remain evidence-backed and must not invent product claims.</p></div></div>}
+    {step === 2 && <div className="account-type-grid">{["Hospital / Health System", "IDN", "Specialty Clinic", "Physician / HCP", "Payer", "PBM", "Specialty Pharmacy", "GPO", "Distributor", "Government / Institutional", "Other"].map((x) => <button className={accountType === x ? "selected" : ""} key={x} onClick={() => setAccountType(x)}><span><Icon name="activity" /></span><strong>{x}</strong>{accountType === x && <Icon name="check" size={15} />}</button>)}</div>}
+    {step === 3 && <div className="form-stack"><div className="form-grid"><SelectField label="Geography" value={geography} onChange={setGeography}><option>United States</option><option>Canada</option><option>United States & Canada</option></SelectField><Field label="State / province" value="Ohio, New York, California, Texas" /><Field label="Company size" value="1,000+ employees" /><Field label="Revenue range" placeholder="Optional" /><Field label="Therapeutic area" value={therapy} /><Field label="Specialty" value="Medical Oncology, Surgical Oncology" /></div><TextArea label="Relevant business characteristics" placeholder="Academic medical center, active clinical research, specialty expansion..." /><details className="advanced"><summary>Advanced Research Criteria <Icon name="chevron" /></summary><div className="form-grid"><Field label="Minimum facilities" placeholder="e.g. 5" /><Field label="Signal recency" value="Last 12 months" /></div></details></div>}
     {step === 4 && <div className="form-stack"><div className="upload-zone"><div className="upload-icon"><Icon name="upload" /></div><h3>Upload supporting documents</h3><p>Drag and drop or browse PDF, DOCX, PPTX, or XLSX files.</p><Button variant="secondary">Browse files</Button><small>Maximum file size: 25 MB</small></div><div className="file-card"><span className="pdf-icon">PDF</span><div><strong>OncoNova_Product_Profile.pdf</strong><small>2.4 MB · Upload complete</small></div><Badge tone="success"><Icon name="check" size={12} /> Ready</Badge><Button variant="icon" icon="close" /></div><TextArea label="Why are these documents being provided?" placeholder="Add optional notes for the research team..." /><div className="info-box neutral"><Icon name="help" /><p>Supporting documents are used as research context and are not automatically treated as verified external evidence.</p></div></div>}
     {step === 5 && <div className="review-grid">{[
-      ["Research Purpose", "Identify high-potential US oncology accounts for Product X.", "Sales Objective", "New Customer Acquisition"],
-      ["Product", "OncoNova X · HER2-positive breast cancer", "Therapeutic Area", "Oncology"],
-      ["Target Account Type", "Hospital / Health System", "Geography", "United States · 4 priority states"],
+      ["Research Purpose", objective, "Sales Objective", "New Customer Acquisition"],
+      ["Product", `${product} · HER2-positive breast cancer`, "Therapeutic Area", therapy],
+      ["Target Account Type", accountType, "Geography", geography],
       ["Research Criteria", "1,000+ employees · Oncology centers · Active clinical programs", "Documents", "1 supporting document"],
     ].map((r) => <div className="review-card" key={r[0]}><span>{r[0]}</span><strong>{r[1]}</strong><span>{r[2]}</span><strong>{r[3]}</strong></div>)}</div>}
-    <div className="wizard-actions"><Button variant="secondary" onClick={() => step === 0 ? setPage("campaigns") : setStep(step - 1)}>{step === 0 ? "Cancel" : "Back"}</Button><span /><Button onClick={() => step === 5 ? setPage("run-research") : setStep(step + 1)}>{step === 5 ? "Save Campaign" : "Continue"} <Icon name="arrow" /></Button></div>
+    <div className="wizard-actions"><Button variant="secondary" onClick={() => step === 0 ? setPage("campaigns") : setStep(step - 1)}>{step === 0 ? "Cancel" : "Back"}</Button><span /><Button onClick={() => step === 5 ? handleSave() : setStep(step + 1)}>{step === 5 ? "Save Campaign" : "Continue"} <Icon name="arrow" /></Button></div>
   </Card></div></div>;
 }
 
@@ -345,11 +379,20 @@ function Settings() {
 export default function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [page, setPage] = useState<Page>("dashboard");
+  const [campaigns, setCampaigns] = useState<string[][]>(campaignRows);
+  const [campaignSuccess, setCampaignSuccess] = useState<string | null>(null);
+
+  const handleSaveCampaign = (newCamp: string[]) => {
+    setCampaigns((prev) => [newCamp, ...prev]);
+    setCampaignSuccess(`"${newCamp[0]}" has been saved and added to your campaigns list.`);
+    setPage("campaigns");
+  };
+
   if (!authenticated) return <Login onLogin={() => setAuthenticated(true)} />;
   let content: ReactNode;
   if (page === "dashboard") content = <Dashboard setPage={setPage} />;
-  else if (page === "campaigns") content = <Campaigns setPage={setPage} />;
-  else if (page === "create-campaign") content = <CreateCampaign setPage={setPage} />;
+  else if (page === "campaigns") content = <Campaigns setPage={setPage} campaigns={campaigns} successMessage={campaignSuccess} onClearSuccess={() => setCampaignSuccess(null)} />;
+  else if (page === "create-campaign") content = <CreateCampaign setPage={setPage} onSave={handleSaveCampaign} />;
   else if (page === "accounts") content = <Accounts setPage={setPage} />;
   else if (page === "run-research") content = <RunResearch setPage={setPage} />;
   else if (page === "running") content = <Running setPage={setPage} />;
