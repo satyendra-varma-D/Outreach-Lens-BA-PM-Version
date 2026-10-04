@@ -1,0 +1,10 @@
+{
+  "description": "An AI-powered platform for pharmaceutical sales teams that uncovers and analyzes high-value accounts, providing actionable insights and intelligence for strategic engagement.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
