@@ -308,17 +308,44 @@ function RunResearch({ setPage }: { setPage: (p: Page) => void }) {
 }
 
 function Running({ setPage }: { setPage: (p: Page) => void }) {
-  const [progress, setProgress] = useState(68);
-  useEffect(() => { const id = setInterval(() => setProgress((p) => Math.min(94, p + 1)), 1200); return () => clearInterval(id); }, []);
-  const analyzed = Math.round(progress / 2);
-  const stages = ["Loading Research Context", "Understanding Target Criteria", "Discovering Candidate Accounts", "Validating Account Relevance", "Collecting Account Intelligence", "Detecting Commercial Signals", "Evaluating Product Fit", "Identifying Buying Stakeholders", "Calculating Opportunity Score", "Generating Intelligence Reports"];
-  return <div className="engine-page"><div className="engine-top"><Logo /><Badge tone="blue"><span className="mini-spinner" /> Research in progress</Badge></div><div className="engine-content"><div className="engine-hero"><div className="engine-mark"><Icon name="spark" size={28} /></div><span>ACCOUNT INTELLIGENCE ENGINE</span><h1>Researching high-potential accounts</h1><p>US Oncology Hospital Expansion</p></div><Card className="progress-card"><div className="progress-summary"><div><strong>{analyzed} <span>/ 50</span></strong><small>accounts analyzed</small></div><div><strong>{progress}%</strong><small>overall progress</small></div></div><div className="progress-track"><i style={{ width: `${progress}%` }} /></div><div className="progress-columns"><div className="stage-list"><h3>Research stages</h3>{stages.map((s, i) => <div key={s} className={i < 4 ? "done" : i === 4 ? "current" : ""}><span>{i < 4 ? <Icon name="check" size={13} /> : i === 4 ? <span className="stage-pulse" /> : null}</span><p>{s}{i === 4 && <small>Analyzing account {analyzed} of 50</small>}</p></div>)}</div><div className="activity-feed"><h3>Live research activity <span>Live</span></h3>{[
+  const [progress, setProgress] = useState(25);
+  const stages = [
+    "Loading Research Context",
+    "Understanding Target Criteria",
+    "Discovering Candidate Accounts",
+    "Validating Account Relevance",
+    "Collecting Account Intelligence",
+    "Detecting Commercial Signals",
+    "Evaluating Product Fit",
+    "Identifying Buying Stakeholders",
+    "Calculating Opportunity Score",
+    "Generating Intelligence Reports"
+  ];
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 100) {
+          clearInterval(id);
+          setTimeout(() => setPage("results"), 600);
+          return 100;
+        }
+        return Math.min(100, p + 15);
+      });
+    }, 250);
+    return () => clearInterval(id);
+  }, [setPage]);
+
+  const analyzed = Math.min(50, Math.round((progress / 100) * 50));
+  const currentStageIndex = Math.min(stages.length - 1, Math.floor((progress / 100) * stages.length));
+
+  return <div className="engine-page"><div className="engine-top"><Logo /><Badge tone={progress === 100 ? "success" : "blue"}><span className={progress === 100 ? "" : "mini-spinner"} /> {progress === 100 ? "Research complete!" : "Research in progress"}</Badge></div><div className="engine-content"><div className="engine-hero"><div className="engine-mark"><Icon name="spark" size={28} /></div><span>ACCOUNT INTELLIGENCE ENGINE</span><h1>{progress === 100 ? "Research completed successfully" : "Researching high-potential accounts"}</h1><p>US Oncology Hospital Expansion</p></div><Card className="progress-card"><div className="progress-summary"><div><strong>{analyzed} <span>/ 50</span></strong><small>accounts analyzed</small></div><div><strong>{progress}%</strong><small>overall progress</small></div></div><div className="progress-track"><i style={{ width: `${progress}%` }} /></div><div className="progress-columns"><div className="stage-list"><h3>Research stages</h3>{stages.map((s, i) => <div key={s} className={i < currentStageIndex ? "done" : i === currentStageIndex ? "current" : ""}><span>{i < currentStageIndex ? <Icon name="check" size={13} /> : i === currentStageIndex ? <span className="stage-pulse" /> : null}</span><p>{s}{i === currentStageIndex && <small>Analyzing account {analyzed} of 50</small>}</p></div>)}</div><div className="activity-feed"><h3>Live research activity <span>Live</span></h3>{[
     ["Evidence validation completed", "Cleveland Clinic", "Just now"],
-    ["Decision maker identified", "Mass General Brigham", "12 sec ago"],
-    ["Product fit analysis completed", "Mayo Clinic", "28 sec ago"],
-    ["Clinical signal detected", "City of Hope", "42 sec ago"],
-    ["Account discovered", "Northwell Health", "1 min ago"],
-  ].map((a, i) => <div key={a[0]}><span className={`feed-icon f${i}`}><Icon name={i === 0 ? "shield" : i === 1 ? "users" : i === 2 ? "spark" : "activity"} size={14} /></span><p><strong>{a[0]}</strong><span>{a[1]}</span></p><small>{a[2]}</small></div>)}</div></div><div className="engine-actions"><span><Icon name="shield" size={15} /> Sources are being verified as research progresses</span><div><Button variant="secondary" onClick={() => setPage("accounts")}>Run in background</Button><Button onClick={() => setPage("results")}>View current results</Button></div></div></Card><p className="engine-note">You can safely leave this page. We’ll notify you when the research is complete.</p></div></div>;
+    ["Decision maker identified", "Mass General Brigham", "Just now"],
+    ["Product fit analysis completed", "Mayo Clinic", "Just now"],
+    ["Clinical signal detected", "City of Hope", "Just now"],
+    ["Account discovered", "Northwell Health", "Just now"],
+  ].map((a, i) => <div key={a[0]}><span className={`feed-icon f${i}`}><Icon name={i === 0 ? "shield" : i === 1 ? "users" : i === 2 ? "spark" : "activity"} size={14} /></span><p><strong>{a[0]}</strong><span>{a[1]}</span></p><small>{a[2]}</small></div>)}</div></div><div className="engine-actions"><span><Icon name="shield" size={15} /> Sources are being verified as research progresses</span><div><Button variant="secondary" onClick={() => setPage("accounts")}>Run in background</Button><Button onClick={() => setPage("results")}>View Results →</Button></div></div></Card><p className="engine-note">You can safely leave this page. We’ll notify you when the research is complete.</p></div></div>;
 }
 
 function Results({ setPage }: { setPage: (p: Page) => void }) {
