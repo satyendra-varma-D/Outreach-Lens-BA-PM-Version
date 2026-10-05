@@ -118,13 +118,17 @@ function PageHeader({ title, subtitle, children }: { title: string; subtitle: st
   return <div className="page-header"><div><div className="eyebrow">Life Sciences Intelligence</div><h1>{title}</h1><p>{subtitle}</p></div><div className="page-actions">{children}</div></div>;
 }
 
+import { sutroAccountData, sutroEvidenceLedger, type EvidenceItem } from "./sutroReportData";
+
 const campaignRows = [
+  ["Life Sciences • ADC Oncology Commercial Run", "Specialist provider of early-phase oncology clinical-operations and CMC services.", "ADC Clinical & CMC Ops", "Biotech", "Oncology / ADCs", "United States", "5", "Oct 05, 2026", "Active"],
   ["US Oncology Hospital Expansion", "Identify high-potential US oncology accounts for Product X.", "OncoNova X", "Health System", "Oncology", "United States", "6", "Oct 01, 2026", "Active"],
   ["HER2 Market Opportunity", "Identify organizations with strong HER2 treatment activity.", "TheraMab", "Specialty Clinic", "Oncology", "US & Canada", "4", "Sep 22, 2026", "Active"],
   ["Specialty Pharmacy Expansion", "Identify specialty pharmacies relevant to Product Y.", "Immunexa", "Specialty Pharmacy", "Immunology", "United States", "2", "Sep 12, 2026", "Draft"],
 ];
 
 const accountRows = [
+  { name: "Sutro Biopharma, Inc.", type: "Biotech (ADC Oncology)", location: "South San Francisco, CA", fit: 7.7, demand: 8.5, intent: 5.4, commercial: 6.5, score: 65, confidence: 68, priority: "Medium" },
   { name: "Cleveland Clinic", type: "Health System", location: "Cleveland, OH", fit: 9, demand: 8, intent: 8, commercial: 9, score: 88, confidence: 91, priority: "High" },
   { name: "Mayo Clinic", type: "Health System", location: "Rochester, MN", fit: 9, demand: 7, intent: 7, commercial: 9, score: 84, confidence: 89, priority: "High" },
   { name: "Mass General Brigham", type: "IDN", location: "Boston, MA", fit: 8, demand: 8, intent: 6, commercial: 8, score: 79, confidence: 86, priority: "Medium" },
@@ -380,60 +384,780 @@ function Results({ setPage }: { setPage: (p: Page) => void }) {
 }
 
 function Score({ value }: { value: number }) { return <span className={`score score-${value >= 8 ? "high" : value >= 6 ? "medium" : "low"}`}><i>{value}</i>/10</span>; }
-function Evidence({ id }: { id: string }) { return <button className="evidence-marker" title="Open source evidence">[{id}]</button>; }
+function Evidence({ id, onClick }: { id: string; onClick?: (id: string) => void }) { 
+  return <button className="evidence-marker" onClick={(e) => { e.stopPropagation(); onClick?.(id); }} title={`Open source evidence [${id}]`}>[{id}]</button>; 
+}
 function DrawerSection({ title, children }: { title: string; children: ReactNode }) { return <section className="drawer-section"><h3>{title}</h3>{children}</section>; }
 
-const reportNav = ["Executive Summary", "Account Profile", "Corporate Structure", "ICP Fit", "Product Fit", "Clinical Intelligence", "Demand & Intent", "Competition", "Access & Reimbursement", "Procurement", "Buying Committee", "Commercial Opportunity", "White Space", "Risks", "Timeline", "Sales Strategy", "Next Best Action", "Research Gaps", "Evidence", "Methodology"];
+const reportNav = [
+  "01. Executive Sales Brief",
+  "02. Account Profile",
+  "03. Customer / ICP Fit",
+  "04. Pipeline & Service Fit",
+  "05. Clinical Intelligence",
+  "06. Funding & Runway",
+  "07. Demand & Buying Intent",
+  "08. Market & Competition",
+  "09. Regulatory & Supply",
+  "10. Procurement Intelligence",
+  "11. Buying Committee",
+  "12. Commercial Opportunity",
+  "13. White Space",
+  "14. Risks & Deal Blockers",
+  "15. Account Timeline",
+  "16. Sales Strategy",
+  "17. Next Best Action",
+  "18. Outreach Messages",
+  "19. Research Gaps",
+  "20. Evidence & Source Ledger",
+  "21. Methodology / Trust"
+];
+
 function ReportSection({ n, title, subtitle, children }: { n: number; title: string; subtitle?: string; children: ReactNode }) {
   return <section className="report-section" id={`section-${n}`}><div className="report-section-head"><span>{String(n).padStart(2, "0")}</span><div><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div><Button variant="icon" icon="chevron" /></div><div className="report-section-body">{children}</div></section>;
 }
 
+/* PDF Preview Modal */
+function PdfPreviewModal({ onClose, onDownload }: { onClose: () => void; onDownload: () => void }) {
+  const d = sutroAccountData;
+  return (
+    <div className="pdf-modal-backdrop" onClick={onClose}>
+      <div className="pdf-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="pdf-modal-header">
+          <div className="pdf-modal-title">
+            <Icon name="briefcase" size={18} />
+            <strong>OutreachLens_Sutro_Biopharma_Intelligence_Report.pdf</strong>
+            <span>Preview Mode · 21 Sections</span>
+          </div>
+          <div className="pdf-modal-actions">
+            <Button variant="secondary" icon="download" onClick={onDownload}>Download PDF / Print</Button>
+            <Button variant="icon" icon="close" onClick={onClose} />
+          </div>
+        </div>
+        <div className="pdf-modal-body">
+          {/* Sheet 1: Executive Brief & Profile */}
+          <div className="pdf-page-sheet">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #0f2b48", paddingBottom: "16px", marginBottom: "20px" }}>
+              <div>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "#ea580c", textTransform: "uppercase", letterSpacing: "0.1em" }}>OUTREACHLENS ACCOUNT INTELLIGENCE REPORT</span>
+                <h1 style={{ margin: "4px 0 2px", fontSize: "24px" }}>{d.account} ({d.ticker})</h1>
+                <p style={{ margin: 0, color: "#64748b", fontSize: "12px" }}>{d.location} · Research date: {d.date}</p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ background: "#ecfdf5", color: "#065f46", padding: "4px 10px", borderRadius: "20px", fontWeight: "700", fontSize: "12px", border: "1px solid #a7f3d0" }}>DECISION: {d.decision}</span>
+                <div style={{ marginTop: "6px", fontSize: "11px", color: "#64748b" }}>Opportunity Score: <strong>65/100 (Medium)</strong></div>
+              </div>
+            </div>
+
+            <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "8px", padding: "10px 14px", fontSize: "11.5px", color: "#9a3412", marginBottom: "20px" }}>
+              <strong>DEMO RUN — ASSUMED SELLER: </strong>{d.demoNotice}
+            </div>
+
+            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "16px" }}>01. Executive Sales Brief</h2>
+            <p><strong>Decision:</strong> {d.decision}. {d.decisionSubtitle}</p>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Item</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td>Account</td><td>{d.account}</td></tr>
+                <tr><td>Account type</td><td>Biotech, clinical-stage oncology (ADC modality). Archetype confidence: High</td></tr>
+                <tr><td>Location</td><td>{d.location} [E01][E06]</td></tr>
+                <tr><td>Parent / ownership</td><td>Public company, Nasdaq: STRO; incorporated in Delaware in 2003 [E06]</td></tr>
+                <tr><td>Opportunity score</td><td>65 / 100, Medium priority (Fit 7.7, Urgency 8.5, Deal 5.4 = 21.6/30)</td></tr>
+                <tr><td>Intelligence confidence</td><td>68%, Moderate (Completeness: 76% - 19 of 25 elements)</td></tr>
+              </tbody>
+            </table>
+
+            <h3 style={{ fontSize: "13px", color: "#0f2b48", marginTop: "14px" }}>Why this account?</h3>
+            <ul style={{ margin: "4px 0 12px", paddingLeft: "20px", fontSize: "12px" }}>
+              {d.whyThisAccount.map((item, idx) => (
+                <li key={idx}><strong>{item.label}:</strong> {item.text}</li>
+              ))}
+            </ul>
+
+            <h3 style={{ fontSize: "13px", color: "#0f2b48", marginTop: "10px" }}>Why now?</h3>
+            <ul style={{ margin: "4px 0 12px", paddingLeft: "20px", fontSize: "12px" }}>
+              {d.whyNow.map((item, idx) => (
+                <li key={idx}><strong>{item.label}:</strong> {item.text}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Sheet 2: Pipeline, Funding & Buying Committee */}
+          <div className="pdf-page-sheet">
+            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>04. Pipeline & Service Fit (A)</h2>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Program</th><th>Target and design</th><th>Stage (as of 5 Oct 2026)</th><th>Next milestone</th><th>Evidence</th></tr></thead>
+              <tbody>
+                {d.pipelineTable.map((row, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{row[0]}</strong></td>
+                    <td>{row[1]}</td>
+                    <td>{row[2]}</td>
+                    <td>{row[3]}</td>
+                    <td>{row[4]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "24px" }}>06. Funding & Runway</h2>
+            <p style={{ fontSize: "12px", margin: "4px 0 8px" }}><strong>Company guidance:</strong> Cash was $164.3M at 30 Jun 2026; runway into at least Q2 2028, excluding anticipated partner milestones [E01].</p>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Date</th><th>Cash, equivalents and marketable securities</th><th>Evidence</th></tr></thead>
+              <tbody>
+                {d.fundingTable.map((row, idx) => (
+                  <tr key={idx}>
+                    <td>{row[0]}</td>
+                    <td><strong>{row[1]}</strong></td>
+                    <td>{row[2]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "24px" }}>11. Buying Committee</h2>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Role (AI-assessed)</th><th>Name and title</th><th>Basis</th><th>Confidence</th><th>Influence</th></tr></thead>
+              <tbody>
+                {d.buyingCommittee.map((row, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{row.role}</strong></td>
+                    <td>{row.name}, {row.title}</td>
+                    <td>{row.basis}</td>
+                    <td>{row.confidence}</td>
+                    <td>{row.influence}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Sheet 3: Outreach Messages, Evidence Ledger & Scoring */}
+          <div className="pdf-page-sheet">
+            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>18. Outreach Messages</h2>
+            {d.outreachMessages.slice(0, 2).map((msg, idx) => (
+              <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "12px", marginBottom: "12px", fontSize: "12px" }}>
+                <strong style={{ color: "#0f2b48" }}>{msg.title}</strong>
+                <div style={{ color: "#64748b", margin: "3px 0 6px" }}>Subject: {msg.subject}</div>
+                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0, color: "#334155" }}>{msg.body}</pre>
+              </div>
+            ))}
+
+            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>20. Evidence & Source Ledger (E01–E21)</h2>
+            <table className="pdf-doc-table" style={{ fontSize: "11px" }}>
+              <thead><tr><th>ID</th><th>Claim</th><th>Source</th><th>Type</th><th>Confidence</th></tr></thead>
+              <tbody>
+                {sutroEvidenceLedger.slice(0, 8).map((ev) => (
+                  <tr key={ev.id}>
+                    <td><strong>[{ev.id}]</strong></td>
+                    <td>{ev.claim}</td>
+                    <td>{ev.source}</td>
+                    <td>{ev.type}</td>
+                    <td>{ev.confidence}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>+ 13 more verified evidence records (E09 to E21) available in full digital report.</p>
+
+            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>21. Scoring & Methodology (100 Points)</h2>
+            <table className="pdf-doc-table" style={{ fontSize: "11.5px" }}>
+              <thead><tr><th>Dimension</th><th>Score</th><th>Reason</th><th>Confidence</th></tr></thead>
+              <tbody>
+                {d.scoringBreakdown.map((row, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{row[0]}</strong></td>
+                    <td>{row[1]}</td>
+                    <td>{row[2]}</td>
+                    <td>{row[3]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Report({ setPage }: { setPage: (p: Page) => void }) {
-  const [source, setSource] = useState(false);
+  const [activeEvidence, setActiveEvidence] = useState<EvidenceItem | null>(null);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [toast, setToast] = useState("");
   const notify = (x: string) => { setToast(x); setTimeout(() => setToast(""), 2400); };
 
+  const handleEvidenceClick = (id: string) => {
+    const cleanId = id.replace(/[\[\]]/g, "").trim();
+    const found = sutroEvidenceLedger.find(e => e.id === cleanId);
+    if (found) {
+      setActiveEvidence(found);
+    } else {
+      notify(`Evidence source ${id} opened`);
+    }
+  };
+
   const handleDownloadPDF = () => {
     const prevTitle = document.title;
-    document.title = "Cleveland_Clinic_Account_Intelligence_Report_OutreachLens";
-    notify("Opening Save as PDF dialog...");
+    document.title = "Sutro_Biopharma_Account_Intelligence_Report_OutreachLens";
+    notify("Opening Save as PDF / Print preview dialog...");
     setTimeout(() => {
       window.print();
       document.title = prevTitle;
     }, 150);
   };
 
-  return <div className="report-page"><div className="report-crumbs"><button onClick={() => setPage("results")}>Account Results</button><Icon name="arrow" size={13} /><span>Cleveland Clinic</span></div><header className="report-hero"><div className="report-title-row"><div className="account-logo">CC</div><div><span className="report-kicker">ACCOUNT INTELLIGENCE REPORT</span><h1>Cleveland Clinic</h1><p><a href="https://clevelandclinic.org" target="_blank" rel="noreferrer">clevelandclinic.org <Icon name="external" size={12} /></a><span>Cleveland, Ohio</span><span>Health System</span></p></div><div className="report-actions"><Button variant="secondary" icon="download" onClick={handleDownloadPDF}>Download PDF</Button><Button variant="secondary" icon="print" onClick={handleDownloadPDF}>Print</Button><Button variant="secondary" icon="share" onClick={() => notify("Secure internal link copied")}>Share</Button><Button icon="refresh" onClick={() => notify("Intelligence refresh queued")}>Refresh research</Button></div></div><div className="report-meta-grid"><div><span>Priority</span><Badge tone="success">↑ HIGH PRIORITY</Badge></div><div><span>Opportunity Score <button title="Weighted product fit, demand, buying intent, and commercial potential">i</button></span><strong>88 <small>/ 100</small></strong></div><div><span>Intelligence Confidence</span><strong>91%</strong></div><div><span>Research Completeness</span><strong>94%</strong></div><div><span>Last Research Update</span><strong>Oct 04, 2026 · 2:36 PM</strong></div></div><div className="report-legend"><span><i className="verified-dot" /> Verified fact</span><span><i className="ai-dot" /> AI-derived insight</span><span><i className="hypothesis-dot" /> Sales hypothesis</span><span><Icon name="shield" size={14} /> 34 verified sources</span></div></header><div className="report-layout"><aside className="report-nav"><span>REPORT CONTENTS</span>{reportNav.map((x, i) => <a href={`#section-${i + 1}`} key={x}><b>{String(i + 1).padStart(2, "0")}</b>{x}</a>)}</aside><main className="report-content">
-    <ReportSection n={1} title="Executive Sales Summary" subtitle="Decision-ready account intelligence grounded in available evidence."><div className="executive-grid">{[
-      ["WHY THIS ACCOUNT?", "Strong alignment with the target oncology portfolio, a significant relevant clinical footprint and evidence of active specialty expansion.", "E01", "verified"],
-      ["WHY NOW?", "A new oncology treatment center expansion was announced within the last 90 days, alongside active specialist recruitment.", "E02", "verified"],
-      ["WHY WE COULD WIN", "High therapeutic fit and relevant treatment capability suggest a credible product conversation.", "E03", "ai"],
-      ["WHY WE COULD LOSE", "Existing competitor presence is likely, while the current procurement pathway and contract timing remain unverified.", "E11", "hypothesis"],
-      ["RECOMMENDED NEXT ACTION", "Engage oncology leadership to validate current therapy usage and map the pharmacy and procurement pathway.", "E03", "recommendation"],
-    ].map((x) => <div className={`exec-card ${x[3]}`} key={x[0]}><span>{x[0]}</span><p>{x[1]} <button onClick={() => setSource(true)} className="evidence-marker">[{x[2]}]</button></p><small>{x[3] === "verified" ? "VERIFIED FACT" : x[3] === "ai" ? "AI-DERIVED INSIGHT" : x[3] === "hypothesis" ? "SALES HYPOTHESIS" : "RECOMMENDATION"}</small></div>)}</div></ReportSection>
-    <ReportSection n={2} title="Account Profile"><div className="profile-grid"><div className="key-value-grid">{[["Legal Name", "The Cleveland Clinic Foundation"], ["Parent Company", "Independent nonprofit"], ["Ownership", "Nonprofit academic medical center"], ["Account Type", "Integrated Health System"], ["Headquarters", "Cleveland, Ohio"], ["Employees", "81,000+ · Official reporting"], ["Geographic Footprint", "Ohio, Florida, Nevada, Canada, UAE"], ["Revenue", "Not used — requires current financial validation"]].map((x) => <div key={x[0]}><span>{x[0]}</span><strong>{x[1]} <Evidence id="E01" /></strong></div>)}</div><div className="snapshot-card"><h3>Relevant clinical footprint</h3><div><strong>23</strong><span>Hospitals</span></div><div><strong>12</strong><span>Observed oncology centers</span></div><div><strong>5</strong><span>Priority locations</span></div><p><Icon name="shield" size={14} /> Counts reflect available official sources and may change.</p></div></div><details className="expand-card"><summary>Relevant facilities and departments <span>8 identified</span></summary></details></ReportSection>
-    <ReportSection n={3} title="Corporate Structure"><div className="hierarchy"><div><Icon name="briefcase" /><span><strong>The Cleveland Clinic Foundation</strong><small>Parent organization · Verified <Evidence id="E01" /></small></span></div><i /><div className="hierarchy-child"><Icon name="activity" /><span><strong>Cleveland Clinic Health System</strong><small>Operating health system · Verified <Evidence id="E04" /></small></span></div><i /><div className="hierarchy-branches"><div><strong>Taussig Cancer Institute</strong><small>Relevant business unit · Verified</small></div><div><strong>Main Campus</strong><small>Hospital / facility · Verified</small></div><div><strong>Regional Cancer Centers</strong><small>12 observed locations</small></div></div></div></ReportSection>
-    <ReportSection n={4} title="Customer / ICP Fit"><div className="fit-summary"><div><span>OVERALL ICP FIT</span><strong>91%</strong><Badge tone="success">Excellent fit</Badge></div><p>The account strongly matches the research campaign’s defined organization, geography, specialty and scale criteria. <Evidence id="E01" /></p></div><div className="fit-matrix">{[["Account Type Fit", 100, "Integrated health system matches target"], ["Geography Fit", 100, "US-based priority geography"], ["Therapeutic Fit", 95, "Deep oncology capabilities"], ["Indication Fit", 88, "Relevant breast oncology programs"], ["Specialty Fit", 94, "Multidisciplinary oncology team"], ["Scale Fit", 90, "Large academic health system"], ["Business Model Fit", 72, "Procurement model requires validation"]].map((x) => <div key={String(x[0])}><div><strong>{x[0]}</strong><span>{x[1]}%</span></div><i><b style={{ width: `${x[1]}%` }} /></i><p>{x[2]} <Evidence id="E03" /></p></div>)}</div></ReportSection>
-    <ReportSection n={5} title="Product Fit"><div className="comparison"><div className="compare-head"><span>OUR PRODUCT</span><strong>OncoNova X</strong></div><div className="compare-head account"><span>ACCOUNT</span><strong>Cleveland Clinic</strong></div>{[["Therapeutic Area", "Oncology", "Oncology"], ["Indication", "HER2-positive breast cancer", "Dedicated breast oncology program"], ["Patient Population", "Eligible adult patients", "Volume not publicly verified"], ["Clinical Capability", "Specialist administration required", "Advanced infusion and oncology capability"], ["Geography", "United States", "US-based with national footprint"], ["Business Need", "Treatment option in target indication", "Current utilization requires validation"]].map((x) => <div className="compare-row" key={x[0]}><span>{x[0]}</span><p>{x[1]}</p><p>{x[2]} <Evidence id="E05" /></p></div>)}</div><div className="product-fit-callout"><Badge tone="success">PRODUCT FIT: HIGH</Badge><p><strong>Why this product may be relevant</strong>The account’s observed clinical capability and indication-specific program create credible alignment. Current protocol and product utilization must be validated directly. <Evidence id="E05" /></p></div></ReportSection>
-    <ReportSection n={6} title="Clinical / Patient Intelligence"><div className="clinical-tags"><span>Breast oncology</span><span>Medical oncology</span><span>Precision medicine</span><span>Clinical trials</span><span>Infusion services</span></div><div className="signal-cards">{[["New oncology treatment center", "Aug 18, 2026", "Official Company", "Potential increase in relevant treatment capacity."], ["HER2 clinical trial activity", "Jul 22, 2026", "Clinical", "Signals active research interest in the target indication."], ["Oncology specialist recruitment", "Sep 09, 2026", "Professional", "May indicate growth in specialist capacity."]].map((x, i) => <div key={x[0]}><div className="signal-card-top"><span className={`signal-type s${i}`}><Icon name="activity" /></span><Badge tone={i < 2 ? "success" : "warning"}>{i < 2 ? "HIGH" : "MEDIUM"} CONFIDENCE</Badge></div><h3>{x[0]}</h3><span>{x[1]} · {x[2]}</span><p>{x[3]} <Evidence id={`E0${i + 2}`} /></p></div>)}</div></ReportSection>
-    <ReportSection n={7} title="Demand & Buying Intent"><div className="two-col"><SignalList title="Demand Signals" items={["Facility expansion — verified", "Specialist recruitment — likely", "Clinical program activity — verified", "Treatment capacity growth — AI assessment"]} /><SignalList title="Buying Signals" items={["Formulary activity — requires validation", "Vendor onboarding — not found", "Tender / RFP — not found", "Supplier change — unknown"]} /></div></ReportSection>
-    <ReportSection n={8} title="Market & Competitive Intelligence"><div className="section-callout warning"><Icon name="help" /><p><strong>Relationship evidence is limited</strong>Public sources indicate relevant treatment activity, but do not reliably confirm product contracts or utilization.</p></div><div className="table-scroll"><table><thead><tr><th>Competitor</th><th>Product / therapy</th><th>Indication</th><th>Evidence</th><th>Relevance</th><th>Status</th></tr></thead><tbody><tr><td>Roche / Genentech</td><td>HER2-directed portfolio</td><td>HER2+ breast cancer</td><td><Evidence id="E11" /> Published clinical material</td><td>High</td><td><Badge tone="success">Verified therapy relevance</Badge></td></tr><tr><td>AstraZeneca / Daiichi Sankyo</td><td>HER2-directed therapy</td><td>HER2+ breast cancer</td><td><Evidence id="E12" /> Trial activity</td><td>High</td><td><Badge tone="warning">Likely presence</Badge></td></tr><tr><td>Other suppliers</td><td>Unknown</td><td>—</td><td>No reliable evidence</td><td>Unknown</td><td><Badge>Unknown</Badge></td></tr></tbody></table></div><div className="opportunity-note"><strong>Potential Competitive Opportunity</strong><p>Specialty expansion may create an opening to validate unmet needs and current treatment pathways. No switching event has been verified.</p></div></ReportSection>
-    <ReportSection n={9} title="Access & Reimbursement"><div className="status-grid">{[["Medicare", "Verified", "Participating provider"], ["Medicaid", "Verified", "Ohio Medicaid participation"], ["Commercial", "Requires Validation", "Plan-specific coverage"], ["Formulary", "Requires Validation", "Internal formulary not public"], ["Prior Authorization", "Requires Validation", "Product and plan specific"], ["340B", "Verified", "Eligible entity status observed"], ["Step Therapy", "Not Found", "No reliable public account evidence"], ["Quantity Limits", "Not Applicable", "Account-level data not applicable"]].map((x) => <div key={x[0]}><span>{x[0]}</span><Badge tone={x[1] === "Verified" ? "success" : x[1] === "Requires Validation" ? "warning" : "neutral"}>{x[1]}</Badge><p>{x[2]}</p></div>)}</div></ReportSection>
-    <ReportSection n={10} title="Procurement Intelligence"><div className="procure-summary"><div><span>Procurement Model</span><strong>Likely centralized with service-line input</strong><Badge tone="warning">AI assessment — requires validation</Badge></div><div><span>GPO Involvement</span><strong>Not reliably verified</strong><Badge>Unknown</Badge></div><div><span>Formulary Process</span><strong>Pharmacy & Therapeutics pathway likely</strong><Badge tone="warning">Requires validation</Badge></div></div><div className="process-flow">{["Clinical Need", "Clinical Evaluation", "Formulary / Pharmacy", "Procurement", "Commercial Review", "Contract", "Purchase"].map((x, i) => <div className={i < 2 ? "verified" : i < 5 ? "inferred" : "unknown"} key={x}><span>{i < 2 ? <Icon name="check" /> : "?"}</span><strong>{x}</strong><small>{i < 2 ? "Supported" : i < 5 ? "Requires validation" : "Unknown"}</small></div>)}</div></ReportSection>
-    <ReportSection n={11} title="Buying Committee"><div className="section-callout"><Icon name="spark" /><p><strong>Role assessment notice</strong>Buying roles are AI-derived from public professional information and require direct validation.</p></div><div className="stakeholder-grid">{[["EW", "Dr. Elena Warren", "Chair, Oncology", "Clinical Decision Maker", "High"], ["MC", "Michael Chen", "VP, Pharmacy Services", "Pharmacy / Economic Buyer", "High"], ["SK", "Sarah Kendall", "Director, Strategic Sourcing", "Procurement", "Medium"], ["JR", "James Rivera", "Medical Director, Breast Oncology", "Medical Influencer", "Medium"]].map((x) => <button className="stakeholder-card" key={x[1]}><span className="avatar">{x[0]}</span><div><h3>{x[1]}</h3><p>{x[2]}</p><Badge tone="blue">{x[3]}</Badge><small><Icon name="spark" size={11} /> AI assessment — requires validation</small></div><div className="influence"><span>Influence</span><strong>{x[4]}</strong></div></button>)}</div></ReportSection>
-    <ReportSection n={12} title="Commercial Opportunity"><div className="commercial-hero"><div><span>OPPORTUNITY TYPE</span><strong>New Account · Product Introduction</strong></div><div><span>COMMERCIAL POTENTIAL</span><Badge tone="success">HIGH</Badge></div></div><div className="indicator-grid">{["Relevant facilities", "Specialist footprint", "Patient / demand signals", "Product applicability", "Clinical expansion", "Procurement signal", "Competitive landscape"].map((x, i) => <div key={x}><span>{i < 5 ? <Icon name="check" /> : "?"}</span><strong>{x}</strong><small>{i < 5 ? "Positive indicator" : "Requires validation"}</small></div>)}</div><div className="section-callout neutral"><Icon name="help" /><p><strong>No fabricated commercial value</strong>Commercial value cannot be reliably estimated from available public evidence.</p></div></ReportSection>
-    <ReportSection n={13} title="White Space"><div className="white-space-map"><div><span>CURRENT OBSERVATION</span><h3>Relevant oncology infrastructure</h3><p>Active clinical footprint and therapy-area relevance are verified. Current supplier relationships are not public.</p><Badge>Internal relationship data unavailable</Badge></div><Icon name="arrow" size={24} /><div><span>POTENTIAL WHITE SPACE</span><h3>Product evaluation conversation</h3><p>Validate unmet need, current protocols and fit for eligible patient populations.</p><Badge tone="orange">Sales hypothesis</Badge></div></div></ReportSection>
-    <ReportSection n={14} title="Risks & Deal Blockers"><div className="risk-table">{[["Existing competitor presence", "High", "Relevant therapies are active in the market; account-level use is unverified.", "May reduce switching appetite.", "Lead with unmet-need discovery, not displacement claims."], ["Formulary restriction", "Medium", "Internal formulary not publicly accessible.", "Could limit access or add review steps.", "Map P&T process and evidence requirements."], ["Procurement pathway unknown", "Medium", "No official workflow found.", "May delay stakeholder alignment.", "Validate sourcing and contracting sequence."], ["Decision maker role", "Low", "Public titles identified; buying roles inferred.", "Wrong entry point may slow discovery.", "Validate roles in initial stakeholder conversations."]].map((x) => <div key={x[0]}><div><Badge tone={x[1] === "High" ? "danger" : x[1] === "Medium" ? "warning" : "neutral"}>{x[1]}</Badge><strong>{x[0]}</strong></div><p><span>Evidence</span>{x[2]}</p><p><span>Potential impact</span>{x[3]}</p><p><span>Suggested mitigation</span>{x[4]}</p></div>)}</div></ReportSection>
-    <ReportSection n={15} title="Account Timeline"><div className="timeline-filter"><Button variant="secondary">All events <Icon name="chevron" /></Button><Button variant="ghost">Clinical</Button><Button variant="ghost">Corporate</Button><Button variant="ghost">People</Button></div><div className="timeline">{[["Oct 04, 2026", "Most recent trigger", "Oncology expansion research update", "Official Company", "E02"], ["Sep 09, 2026", "Hiring", "Oncology specialist recruitment activity observed", "Professional", "E08"], ["Aug 18, 2026", "Facility expansion", "New oncology treatment center announced", "Official Company", "E02"], ["Jul 22, 2026", "Clinical", "Relevant HER2 trial activity updated", "Clinical", "E06"], ["Mar 14, 2026", "Executive appointment", "New oncology leadership appointment", "Professional", "E09"]].map((x, i) => <div className={i === 0 ? "highlight" : ""} key={x[0] + x[2]}><span className="timeline-dot" /><time>{x[0]}</time><div><Badge tone={i === 0 ? "orange" : "neutral"}>{x[1]}</Badge><h3>{x[2]}</h3><p>{x[3]} <Evidence id={x[4]} /></p></div></div>)}</div></ReportSection>
-    <ReportSection n={16} title="Sales Strategy"><div className="strategy-card"><div className="strategy-main"><span>RECOMMENDED ENTRY POINT</span><h3>Clinical discovery through oncology leadership</h3><p>Lead with evidence-backed questions about current treatment pathways, patient needs and evaluation criteria—not unsupported product claims.</p><div className="strategy-people"><div><span>Primary stakeholder</span><strong>Oncology leadership</strong></div><div><span>Secondary stakeholder</span><strong>Pharmacy services</strong></div><div><span>Potential champion</span><strong>Breast oncology program lead</strong></div></div></div><div className="mlr-flag"><Icon name="shield" /><span><strong>Requires Medical / Legal / Regulatory review</strong>Product-specific value claims and talk tracks must follow approved materials.</span></div></div><div className="strategy-columns"><div><h3>Key talking points</h3><ul><li>Current HER2-positive treatment pathway and unmet needs</li><li>Evidence expectations for therapy review</li><li>Operational requirements across regional centers</li></ul></div><div><h3>Questions sales should ask</h3><ul><li>How are new oncology therapies clinically evaluated?</li><li>Which stakeholders own formulary and procurement decisions?</li><li>What patient or operational needs remain unmet?</li></ul></div><div><h3>Potential objections</h3><ul><li>Established treatment protocols</li><li>Evidence threshold for formulary review</li><li>Contracting and budget timing</li></ul></div></div></ReportSection>
-    <ReportSection n={17} title="Next Best Action"><div className="nba-card"><div className="nba-icon"><Icon name="arrow" size={24} /></div><div><span>NEXT BEST ACTION</span><h2>Engage oncology leadership to validate current therapy usage and procurement pathway.</h2><p>Start with clinical discovery, then map pharmacy and procurement stakeholders before any product-specific proposal.</p><div className="nba-meta"><span><small>Priority</small><Badge tone="success">High</Badge></span><span><small>Confidence</small><strong>86%</strong></span><span><small>Evidence</small><Evidence id="E03" /> <Evidence id="E05" /></span></div></div></div><ol className="action-steps">{["Contact target stakeholder", "Validate current product landscape", "Confirm procurement process", "Assess product fit with approved evidence", "Determine next meeting and participants"].map((x, i) => <li key={x}><span>{i + 1}</span>{x}</li>)}</ol></ReportSection>
-    <ReportSection n={18} title="Research Gaps" subtitle="Information we could not verify should guide—not be replaced by—sales discovery."><div className="gap-grid">{[["Current competitor contract", "No reliable public evidence of supplier contract terms."], ["Procurement renewal date", "Contract timing was not found in available sources."], ["Formulary committee structure", "Committee membership and cadence are not public."], ["Internal account relationship", "CRM or internal relationship data is not connected."]].map((x) => <div key={x[0]}><span>?</span><div><strong>{x[0]}</strong><p>{x[1]}</p></div><Badge>UNVERIFIED</Badge></div>)}</div><Button variant="secondary" icon="plus" onClick={() => notify("4 gaps added to Research Watchlist")}>Add to Research Watchlist</Button></ReportSection>
-    <ReportSection n={19} title="Evidence & Source Ledger" subtitle="Every material insight remains traceable to a re-checkable source."><div className="ledger-summary"><div><strong>34</strong><span>Total sources</span></div><div><strong>22</strong><span>Primary sources</span></div><div><strong>91%</strong><span>Average confidence</span></div><div><strong>Oct 04</strong><span>Last verified</span></div></div><div className="table-scroll"><table><thead><tr><th>ID</th><th>Claim / insight</th><th>Source</th><th>Source type</th><th>Published</th><th>Confidence</th><th /></tr></thead><tbody>{[["E01", "Organization profile and clinical footprint", "Cleveland Clinic — Facts & Figures", "Official Company", "2026", "High"], ["E02", "New oncology facility announced", "Cleveland Clinic Newsroom", "Official Company", "Aug 18, 2026", "High"], ["E03", "Relevant oncology program capability", "Taussig Cancer Institute", "Official Company", "Sep 02, 2026", "High"], ["E05", "Breast oncology program and services", "Cleveland Clinic Cancer Care", "Clinical", "Jul 14, 2026", "High"], ["E06", "HER2 clinical trial activity", "ClinicalTrials.gov", "Government", "Jul 22, 2026", "High"], ["E09", "Oncology leadership profile", "Professional profile", "Professional", "Mar 14, 2026", "Medium"]].map((x) => <tr key={x[0]}><td><button className="evidence-marker" onClick={() => setSource(true)}>[{x[0]}]</button></td><td>{x[1]}</td><td><a href="https://www.clevelandclinic.org" target="_blank" rel="noreferrer">{x[2]} <Icon name="external" size={12} /></a></td><td><Badge tone="blue">{x[3]}</Badge></td><td>{x[4]}</td><td><Badge tone={x[5] === "High" ? "success" : "warning"}>{x[5]}</Badge></td><td><Button variant="icon" icon="external" /></td></tr>)}</tbody></table></div><details className="method-details"><summary>Source hierarchy and confidence methodology <Icon name="chevron" /></summary><p>Government and regulatory sources receive the highest authority. Official company and clinical sources provide primary account evidence. Professional, industry and social sources may indicate useful signals, but require corroboration before being treated as authoritative.</p></details></ReportSection>
-    <ReportSection n={20} title="AI / Evidence Methodology"><div className="method-grid"><div><span className="verified-dot" /><strong>VERIFIED FACT</strong><p>Directly supported by a cited, re-checkable source.</p></div><div><span className="ai-dot" /><strong>AI-DERIVED INSIGHT</strong><p>Synthesis from multiple sources; reasoning is shown.</p></div><div><span className="hypothesis-dot" /><strong>SALES HYPOTHESIS</strong><p>A plausible idea that requires field validation.</p></div><div><span className="recommend-dot" /><strong>RECOMMENDATION</strong><p>Suggested action based on available intelligence.</p></div><div><span className="unknown-dot" /><strong>UNVERIFIED</strong><p>Information that could not be reliably confirmed.</p></div></div><div className="method-copy"><div><strong>What was researched</strong><p>Official organization sources, clinical activity, public professional profiles, relevant government records and industry signals.</p></div><div><strong>What remains unknown</strong><p>Internal relationships, current supplier contracts, product utilization, formulary detail and procurement timing.</p></div><div><strong>Research timestamp</strong><p>October 04, 2026 at 2:36 PM ET · Intelligence confidence 91% · Research completeness 94%.</p></div></div></ReportSection>
-  </main></div>{source && <><div className="drawer-overlay" onClick={() => setSource(false)} /><aside className="source-drawer"><div className="drawer-head"><div><span>SOURCE DETAIL</span><h2>Evidence [E02]</h2></div><Button variant="icon" icon="close" onClick={() => setSource(false)} /></div><Badge tone="success"><Icon name="shield" size={12} /> High confidence</Badge><blockquote>“Cleveland Clinic announced an expansion of oncology treatment capacity at its regional cancer facilities...”</blockquote><div className="source-fields"><div><span>Claim supported</span><strong>New oncology treatment center expansion announced within the last 90 days.</strong></div><div><span>Source</span><strong>Cleveland Clinic Newsroom</strong></div><div><span>Source type</span><strong>Official Company</strong></div><div><span>Published</span><strong>August 18, 2026</strong></div><div><span>Retrieved</span><strong>October 04, 2026</strong></div></div><Button className="full-width" icon="external" onClick={() => window.open("https://www.clevelandclinic.org", "_blank")}>Open official source</Button><div className="source-method"><Icon name="shield" /><p><strong>Why this source is trusted</strong>Official company sources are treated as primary evidence for account-specific announcements and organization information.</p></div></aside></>}{toast && <div className="toast"><Icon name="check" />{toast}</div>}</div>;
+  const d = sutroAccountData;
+
+  return <div className="report-page"><div className="report-crumbs"><button onClick={() => setPage("results")}>Account Results</button><Icon name="arrow" size={13} /><span>{d.account}</span></div>
+    <header className="report-hero">
+      <div className="report-title-row">
+        <div className="account-logo" style={{ background: "var(--navy-950)", color: "white", fontSize: "16px", fontWeight: "700" }}>STRO</div>
+        <div>
+          <span className="report-kicker">ACCOUNT INTELLIGENCE REPORT • LIFE SCIENCES</span>
+          <h1>{d.account} <small style={{ fontSize: "16px", color: "var(--slate-500)", fontWeight: "500" }}>({d.ticker})</small></h1>
+          <p>
+            <a href="https://www.sutrobio.com" target="_blank" rel="noreferrer">sutrobio.com <Icon name="external" size={12} /></a>
+            <span>{d.location}</span>
+            <span>Biotech (ADC Oncology)</span>
+            <span>Research date: {d.date}</span>
+          </p>
+        </div>
+        <div className="report-actions">
+          <Button variant="secondary" icon="eye" onClick={() => setShowPdfPreview(true)}>PDF Preview</Button>
+          <Button variant="secondary" icon="download" onClick={handleDownloadPDF}>Download PDF</Button>
+          <Button variant="secondary" icon="print" onClick={handleDownloadPDF}>Print</Button>
+          <Button variant="secondary" icon="share" onClick={() => notify("Report link copied to clipboard")}>Share</Button>
+          <Button icon="refresh" onClick={() => notify("Refreshing live account intelligence...")}>Refresh</Button>
+        </div>
+      </div>
+
+      <div className="report-meta-grid">
+        <div><span>Decision</span><Badge tone="warning">{d.decision}</Badge></div>
+        <div><span>Opportunity Score</span><strong>{d.scores.opportunityScore} <small>/ 100</small></strong></div>
+        <div><span>Intelligence Confidence</span><strong>{d.scores.confidence}% <small>(Moderate)</small></strong></div>
+        <div><span>Research Completeness</span><strong>{d.scores.completeness}% <small>({d.scores.completenessCount})</small></strong></div>
+        <div><span>Compact Score View</span><strong>Fit {d.scores.fitScore} · Urg {d.scores.urgencyScore} · Deal {d.scores.dealScore} = {d.scores.totalCompact}/30</strong></div>
+      </div>
+
+      <div style={{ marginTop: "12px", padding: "10px 14px", background: "var(--orange-50)", border: "1px solid #fed7aa", borderRadius: "8px", fontSize: "12.5px", color: "#9a3412" }}>
+        <strong>DEMO RUN — ASSUMED SELLER: </strong>{d.demoNotice}
+      </div>
+
+      <div className="report-legend" style={{ marginTop: "12px" }}>
+        <span><i className="verified-dot" /> VF = Verified fact</span>
+        <span><i className="ai-dot" /> DI = Derived insight</span>
+        <span><i className="hypothesis-dot" /> SH = Sales hypothesis</span>
+        <span><Badge tone="success" style={{ padding: "1px 6px" }}>REC</Badge> Recommendation</span>
+        <span><Badge tone="neutral" style={{ padding: "1px 6px" }}>UV</Badge> Unverified</span>
+        <span><Icon name="shield" size={14} /> 21 re-checkable sources [E01–E21]</span>
+      </div>
+    </header>
+
+    <div className="report-layout">
+      <aside className="report-nav">
+        <span>REPORT CONTENTS</span>
+        {reportNav.map((x, i) => <a href={`#section-${i + 1}`} key={x}><b>{String(i + 1).padStart(2, "0")}</b>{x.replace(/^\d+\.\s*/, "")}</a>)}
+      </aside>
+
+      <main className="report-content">
+        {/* 01. Executive Sales Brief */}
+        <ReportSection n={1} title="Executive Sales Brief" subtitle="Decision: PURSUE WITH VALIDATION. Several time-sensitive triggers are public and funded.">
+          <div className="executive-grid">
+            <div className="exec-card verified">
+              <span>WHY THIS ACCOUNT?</span>
+              <p>Three programs are moving into or toward the clinic at once (STRO-004 Phase 1, STRO-006 Phase 1 entry, STRO-227 IND), with funding into at least Q2 2028. Manufacturing fully outsourced.</p>
+              <small>VERIFIED FACT · <Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E03" onClick={handleEvidenceClick} /> <Evidence id="E07" onClick={handleEvidenceClick} /></small>
+            </div>
+            <div className="exec-card verified">
+              <span>WHY NOW?</span>
+              <p>STRO-006 first-in-human start was guided for Q3 2026. STRO-227 IND filing guided for later in 2026 with CMC underway. STRO-004 is actively in dose optimization (4–5 mg/kg).</p>
+              <small>VERIFIED FACT · <Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E02" onClick={handleEvidenceClick} /></small>
+            </div>
+            <div className="exec-card ai">
+              <span>WHY WE COULD WIN</span>
+              <p>Parallel programs create concurrent start-up and CMC workload for a lean team after ~50% restructuring. 10-K explicitly relies on third-party CROs and CDMOs.</p>
+              <small>DERIVED INSIGHT · <Evidence id="E07" onClick={handleEvidenceClick} /> <Evidence id="E08" onClick={handleEvidenceClick} /></small>
+            </div>
+            <div className="exec-card hypothesis">
+              <span>WHY WE COULD LOSE</span>
+              <p>Incumbent CRO/CDMO vendor relationships are unknown. Cost discipline after two restructurings; quarterly revenue dropped following partner exit.</p>
+              <small>SALES HYPOTHESIS & UNVERIFIED · <Evidence id="E15" onClick={handleEvidenceClick} /> <Evidence id="E16" onClick={handleEvidenceClick} /></small>
+            </div>
+            <div className="exec-card recommendation">
+              <span>RECOMMENDED NEXT ACTION</span>
+              <p>{d.recommendedAction}</p>
+              <small>RECOMMENDATION · <Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E14" onClick={handleEvidenceClick} /></small>
+            </div>
+          </div>
+        </ReportSection>
+
+        {/* 02. Account Profile */}
+        <ReportSection n={2} title="Account Profile" subtitle="Public corporate details, clinical modality, revenue and facility structure.">
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Field</th><th>Value</th><th>Evidence</th></tr></thead>
+              <tbody>
+                {d.accountProfileTable.map((r, i) => (
+                  <tr key={i}>
+                    <td><strong>{r[0]}</strong></td>
+                    <td>{r[1]}</td>
+                    <td>{r[2] !== "—" ? <Evidence id={r[2].replace(/[\[\]]/g, "")} onClick={handleEvidenceClick} /> : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ReportSection>
+
+        {/* 03. Customer / ICP Fit */}
+        <ReportSection n={3} title="Customer / ICP Fit" subtitle="Score: 13 / 15. Clinical-stage oncology biotech with outsourced manufacturing.">
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Dimension</th><th>Assessment</th><th>Reason</th><th>Evidence</th><th>Confidence</th><th>Gap</th></tr></thead>
+              <tbody>
+                {d.icpFitTable.map((r, i) => (
+                  <tr key={i}>
+                    <td><strong>{r[0]}</strong></td>
+                    <td><Badge tone={r[1] === "High" ? "success" : "warning"}>{r[1]}</Badge></td>
+                    <td>{r[2]}</td>
+                    <td><Evidence id={r[3].replace(/[\[\]]/g, "")} onClick={handleEvidenceClick} /></td>
+                    <td><Badge tone="blue">{r[4]}</Badge></td>
+                    <td>{r[5]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ReportSection>
+
+        {/* 04. Pipeline & Service Fit */}
+        <ReportSection n={4} title="Pipeline & Service Fit (A)" subtitle="Score: 10 / 15. Provisional because seller is assumed as an early-phase oncology CRO/CMC partner.">
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Program</th><th>Target and design</th><th>Stage (as of 5 Oct 2026)</th><th>Next milestone</th><th>Evidence</th></tr></thead>
+              <tbody>
+                {d.pipelineTable.map((r, i) => (
+                  <tr key={i}>
+                    <td><strong>{r[0]}</strong></td>
+                    <td>{r[1]}</td>
+                    <td><Badge tone="blue">{r[2]}</Badge></td>
+                    <td>{r[3]}</td>
+                    <td><Evidence id={r[4].replace(/[\[\]]/g, "").split("][")[0]} onClick={handleEvidenceClick} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="product-fit-callout" style={{ marginTop: "14px" }}>
+            <Badge tone="warning">Service-fit assessment (A)</Badge>
+            <p><strong>Three live workloads visible from public evidence:</strong> Site & CRO start-up for STRO-006 first-in-human; CMC and analytical support for exatecan DAR8 ADCs + IND work on STRO-227; Possible expansion of STRO-004 after dose selection.</p>
+          </div>
+        </ReportSection>
+
+        {/* 05. Clinical / Pipeline Intelligence */}
+        <ReportSection n={5} title="Clinical / Pipeline Intelligence" subtitle="Trial NCT07227168 (STRIVE-01) details and preclinical disclosures.">
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Signal</th><th>Date</th><th>Evidence</th><th>Confidence</th><th>Implication</th></tr></thead>
+              <tbody>
+                {d.clinicalSignals.map((r, i) => (
+                  <tr key={i}>
+                    <td><strong>{r[0]}</strong></td>
+                    <td>{r[1]}</td>
+                    <td><Evidence id={r[2].replace(/[\[\]]/g, "").split("][")[0]} onClick={handleEvidenceClick} /></td>
+                    <td><Badge tone={r[3].includes("High") ? "success" : "warning"}>{r[3]}</Badge></td>
+                    <td>{r[4]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ReportSection>
+
+        {/* 06. Funding & Runway */}
+        <ReportSection n={6} title="Funding & Runway" subtitle="Spending capacity: $164.3M cash as of 30 Jun 2026 with runway into at least Q2 2028.">
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Date</th><th>Cash, equivalents and marketable securities</th><th>Evidence</th></tr></thead>
+              <tbody>
+                {d.fundingTable.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r[0]}</td>
+                    <td><strong>{r[1]}</strong></td>
+                    <td><Evidence id={r[2].replace(/[\[\]]/g, "")} onClick={handleEvidenceClick} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ fontSize: "12px", color: "var(--slate-500)", marginTop: "8px" }}>Note: Milestones from Astellas ($10M + $7.5M triggered) provide non-dilutive upside. Spending capacity is a demand indicator, not a buying signal.</p>
+        </ReportSection>
+
+        {/* 07. Demand & Buying Intent */}
+        <ReportSection n={7} title="Demand & Buying Intent" subtitle="Demand signals are strong, but no public RFP or verified vendor search exists.">
+          <div className="two-col">
+            <SignalList title="Demand Signals (Strong)" items={["STRO-006 first-in-human guided for Q3 2026 — Start-up work due now", "STRO-227 IND filing in late 2026 — IND-enabling & CMC demand", "STRO-004 dose optimization in progress — Potential expansion cohorts", "Funded $110M raise & $164.3M cash — Financial capacity to spend"]} />
+            <SignalList title="Buying Signals (None Verified)" items={["RFP or CDMO tender — Not found in public sources", "New CRO vendor announcement — Not found for current programs", "Procurement leadership change — Not retrieved", "Reliance on outsourced CROs/CDMOs — Stated in 10-K risk factor"]} />
+          </div>
+        </ReportSection>
+
+        {/* 08. Market & Competitive Intelligence */}
+        <ReportSection n={8} title="Market & Competitive Intelligence" subtitle="TF-targeted ADC landscape (Adcendo ADCE-T02, Lepu, Evopoint) and CDMO history.">
+          <div className="section-callout warning">
+            <Icon name="help" />
+            <p><strong>Incumbent vendor relationships unknown:</strong> Boehringer Ingelheim scaled luvelta at 4,500L in Vienna historically [E16], but luvelta is closed. Current vendors for STRO-004/006/227 are unverified.</p>
+          </div>
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Competitor / Target</th><th>Modality / Stage</th><th>Account Evidence</th><th>Market Context</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Adcendo (ADCE-T02)</strong></td><td>Tissue Factor ADC, Phase 1 (NCT06597721)</td><td><Evidence id="E19" onClick={handleEvidenceClick} /></td><td>Recruiting since Nov 2024; active competition in TF space</td></tr>
+                <tr><td><strong>Lepu / Evopoint</strong></td><td>TF ADCs in development</td><td><Evidence id="E18" onClick={handleEvidenceClick} /></td><td>Crowded target accelerates need for Sutro speed & clean CMC</td></tr>
+                <tr><td><strong>Incumbent CRO / CDMO</strong></td><td>Unknown for active clinical assets</td><td><Evidence id="E08" onClick={handleEvidenceClick} /></td><td>Outsourced model confirmed, specific partners unverified</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </ReportSection>
+
+        {/* 09. Regulatory, Manufacturing & Supply */}
+        <ReportSection n={9} title="Regulatory, Manufacturing & Supply" subtitle="Replaces Access & Reimbursement (points reassigned to funding & regulatory readiness).">
+          <div className="status-grid">
+            {[
+              ["Approved Products", "None", "Clinical-stage biotech [E01]"],
+              ["IND Status", "Verified", "STRO-004 cleared; STRO-006/227 guided for 2026 [E12][E01]"],
+              ["Manufacturing Model", "Verified", "San Carlos GMP closed; 100% outsourced to CDMOs [E07][E08]"],
+              ["Named CDMO (Current)", "Unverified", "Historical Boehringer Ingelheim for luvelta only [E16]"],
+              ["Canada / Reimbursement", "Not Applicable", "Pre-approval clinical stage"],
+              ["Patents / USPTO", "Unchecked", "USPTO not queried in this run"]
+            ].map((x) => (
+              <div key={x[0]}>
+                <span>{x[0]}</span>
+                <Badge tone={x[1] === "Verified" ? "success" : x[1] === "None" ? "neutral" : "warning"}>{x[1]}</Badge>
+                <p>{x[2]}</p>
+              </div>
+            ))}
+          </div>
+        </ReportSection>
+
+        {/* 10. Procurement / Vendor Intelligence */}
+        <ReportSection n={10} title="Procurement / Vendor Intelligence" subtitle="Vendor selection pathway, cost commitments and alliance leadership.">
+          <div className="procure-summary">
+            <div><span>Vendor Model</span><strong>Fully outsourced CROs & CMOs</strong><Badge tone="success">Verified fact [E08]</Badge></div>
+            <div><span>Vendor Commitments</span><strong>Active commitments to third-party CROs/CMOs</strong><Badge tone="blue">Historical [E17]</Badge></div>
+            <div><span>Alliance Function</span><strong>Portfolio Strategy & Strategic CMO Alliances</strong><Badge tone="warning">Directory [E21]</Badge></div>
+          </div>
+        </ReportSection>
+
+        {/* 11. Buying Committee */}
+        <ReportSection n={11} title="Buying Committee" subtitle="Key executive officers identified from SEC proxy filings [E14] and releases.">
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Role (AI-assessed)</th><th>Name and title</th><th>Basis</th><th>Confidence</th><th>Influence</th></tr></thead>
+              <tbody>
+                {d.buyingCommittee.map((m, i) => (
+                  <tr key={i}>
+                    <td><strong>{m.role}</strong></td>
+                    <td>{m.name} — <em>{m.title}</em></td>
+                    <td>{m.basis}</td>
+                    <td><Badge tone={m.confidence === "High" ? "success" : m.confidence === "Good" ? "blue" : "warning"}>{m.confidence}</Badge></td>
+                    <td><strong>{m.influence}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ReportSection>
+
+        {/* 12. Commercial Opportunity */}
+        <ReportSection n={12} title="Commercial Opportunity (A)" subtitle="Moderate potential. Several concurrent programs with funded runway ($164.3M). Score: 8 / 15.">
+          <div className="commercial-hero">
+            <div><span>OPPORTUNITY TYPE</span><strong>New Vendor Relationship · Early-Phase CRO/CMC</strong></div>
+            <div><span>COMMERCIAL POTENTIAL</span><Badge tone="warning">MODERATE (SCORE 8 / 15)</Badge></div>
+          </div>
+          <div className="indicator-grid">
+            {["Parallel pipeline programs [E01]", "Outsourced manufacturing [E08]", "Funded runway to Q2 2028 [E01]", "STRO-006 start-up timing", "STRO-227 IND CMC demands", "Incumbent vendor contracts", "Vendor spend budget"].map((x, i) => (
+              <div key={x}>
+                <span>{i < 5 ? <Icon name="check" /> : "?"}</span>
+                <strong>{x}</strong>
+                <small>{i < 5 ? "Positive indicator" : "Requires discovery"}</small>
+              </div>
+            ))}
+          </div>
+        </ReportSection>
+
+        {/* 13. White Space */}
+        <ReportSection n={13} title="White Space" subtitle="Potential entry opportunities based on pipeline milestones and lean organizational structure.">
+          <div className="white-space-map">
+            <div>
+              <span>CURRENT OBSERVATION</span>
+              <h3>US-only STRIVE-01 & Outsourced CDMO</h3>
+              <p>Internal manufacturing decommissioned; lean team executing parallel trials [E07][E10].</p>
+              <Badge>Internal vendor data unavailable</Badge>
+            </div>
+            <Icon name="arrow" size={24} />
+            <div>
+              <span>POTENTIAL WHITE SPACE</span>
+              <h3>STRO-006 Start-up & STRO-227 CMC</h3>
+              <p>Specialist support for analytical testing, IND-enabling packages, and trial site activation.</p>
+              <Badge tone="orange">Sales hypothesis</Badge>
+            </div>
+          </div>
+        </ReportSection>
+
+        {/* 14. Risks & Deal Blockers */}
+        <ReportSection n={14} title="Risks & Deal Blockers" subtitle="7 identified risks, severity assessments and suggested validation steps.">
+          <div className="risk-table">
+            {d.risks.map((r, i) => (
+              <div key={i}>
+                <div>
+                  <Badge tone={r[1].includes("High") ? "danger" : r[1].includes("Medium") ? "warning" : "neutral"}>{r[1]}</Badge>
+                  <strong>{r[0]}</strong>
+                </div>
+                <p><span>Evidence:</span> {r[2]}</p>
+                <p><span>Impact:</span> {r[3]}</p>
+                <p><span>Mitigation:</span> {r[4]}</p>
+              </div>
+            ))}
+          </div>
+        </ReportSection>
+
+        {/* 15. Account Timeline */}
+        <ReportSection n={15} title="Account Timeline" subtitle="Chronology of corporate restructuring, clinical milestones and financing events.">
+          <div className="timeline">
+            {d.timeline.map((item, i) => (
+              <div className={item.highlight ? "highlight" : ""} key={i}>
+                <span className="timeline-dot" />
+                <time>{item.date}</time>
+                <div>
+                  <Badge tone={item.highlight ? "orange" : "neutral"}>{item.type}</Badge>
+                  <h3>{item.event}</h3>
+                  <p>Evidence: <Evidence id={item.evidence.replace(/[\[\]]/g, "").split("][")[0]} onClick={handleEvidenceClick} /> · Confidence: {item.confidence}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ReportSection>
+
+        {/* 16. Sales Strategy */}
+        <ReportSection n={16} title="Sales Strategy" subtitle="Recommended entry points: CTO (CMC angle) and CMO (Clinical Ops angle).">
+          <div className="strategy-card">
+            <div className="strategy-main">
+              <span>RECOMMENDED VALUE PROPOSITION (CONDITIONAL)</span>
+              <h3>Help a lean team execute STRO-006 & STRO-227 faster with predictable timelines.</h3>
+              <p>Make no unsupported claims regarding Sutro drug quality or arbitrary cost savings. Lead with lean team operational bandwidth.</p>
+              <div className="strategy-people">
+                <div><span>Primary Entry (CMC)</span><strong>Venkatesh Srinivasan (CTO)</strong></div>
+                <div><span>Primary Entry (Clin Ops)</span><strong>Anne Borgman, MD (CMO)</strong></div>
+                <div><span>Secondary Stakeholder</span><strong>Greg Chow (CFO)</strong></div>
+              </div>
+            </div>
+          </div>
+          <div className="strategy-columns" style={{ marginTop: "14px" }}>
+            <div>
+              <h3>Key Talking Points</h3>
+              <ul>
+                <li>Three parallel programs moving to clinic in short window [E01][E03]</li>
+                <li>Lean team execution: how internal vs vendor work is divided [E07]</li>
+                <li>Externalized manufacturing: capacity & analytical support bottlenecks [E08]</li>
+                <li>Dose optimization at STRO-004 and future expansion cohorts [E02]</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Discovery Questions</h3>
+              <ul>
+                <li>How are CROs/CDMOs selected for new programs, and who signs off?</li>
+                <li>Is STRO-006 start-up already staffed, and what gaps remain?</li>
+                <li>What is the plan for STRO-227 CMC and IND-enabling work?</li>
+                <li>Where does the team feel stretched following the restructuring?</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Anticipated Objections</h3>
+              <ul>
+                <li>"We already have vendors in place." → Ask which phases remain open.</li>
+                <li>"Budget is tight after restructuring." → Emphasize milestone predictability.</li>
+                <li>"We prefer vendor consolidation." → Validate current supplier scope.</li>
+              </ul>
+            </div>
+          </div>
+        </ReportSection>
+
+        {/* 17. Next Best Action */}
+        <ReportSection n={17} title="Next Best Action" subtitle="Primary: Confirm STRO-006 first patient dosed, then send tailored outreach to CTO & CMO.">
+          <div className="nba-card">
+            <div className="nba-icon"><Icon name="arrow" size={24} /></div>
+            <div>
+              <span>NEXT BEST ACTION (NBA)</span>
+              <h2>Confirm STRO-006 status, then message Chief Technical Officer & Chief Medical Officer.</h2>
+              <p>Start-up and IND triggers are active in Q4 2026. Target discovery call to reveal vendor decision owners and open gaps.</p>
+              <div className="nba-meta">
+                <span><small>Confidence</small><strong>Medium</strong></span>
+                <span><small>Evidence</small><Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E03" onClick={handleEvidenceClick} /> <Evidence id="E14" onClick={handleEvidenceClick} /></span>
+              </div>
+            </div>
+          </div>
+          <ol className="action-steps" style={{ marginTop: "14px" }}>
+            {[
+              "Check ClinicalTrials.gov & PRs to confirm if STRO-006 has dosed its first patient.",
+              "Send short tailored CMC email to CTO Venkatesh Srinivasan.",
+              "Send clinical ops introduction email to CMO Dr. Anne Borgman.",
+              "Pull NCT07227168 trial record for site and investigator details.",
+              "Monitor Q3 2026 financial release for updated cash burn and timeline guidance."
+            ].map((x, i) => <li key={i}><span>{i + 1}</span>{x}</li>)}
+          </ol>
+        </ReportSection>
+
+        {/* 18. Outreach Messages */}
+        <ReportSection n={18} title="Outreach Messages" subtitle="Custom human-reviewed drafts grounded strictly in public research (no invented data).">
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {d.outreachMessages.map((msg, i) => (
+              <div key={i} className="card" style={{ padding: "16px 20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <strong style={{ color: "var(--navy-950)", fontSize: "14px" }}>{msg.title}</strong>
+                  <Button variant="secondary" icon="share" onClick={() => { navigator.clipboard?.writeText(msg.body); notify("Draft copied to clipboard"); }}>Copy text</Button>
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--slate-500)", marginBottom: "8px" }}>
+                  <span>Recipient: <strong>{msg.recipient}</strong></span> · <span>Subject: <strong>{msg.subject}</strong></span>
+                </div>
+                <pre style={{ background: "var(--slate-50)", border: "1px solid var(--slate-200)", padding: "14px", borderRadius: "8px", fontSize: "12.5px", whiteSpace: "pre-wrap", fontFamily: "inherit", color: "var(--navy-950)", margin: 0 }}>
+                  {msg.body}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </ReportSection>
+
+        {/* 19. Research Gaps */}
+        <ReportSection n={19} title="Research Gaps" subtitle="9 verified gaps to resolve during discovery or follow-up intelligence scans.">
+          <div className="gap-grid">
+            {d.researchGaps.map((g, i) => (
+              <div key={i}>
+                <span>?</span>
+                <div>
+                  <strong>{g[1]}</strong>
+                  <p>Category: {g[0]} · Action: {g[3]}</p>
+                </div>
+                <Badge tone={g[4] === "High" ? "danger" : "warning"}>{g[4]} Priority</Badge>
+              </div>
+            ))}
+          </div>
+        </ReportSection>
+
+        {/* 20. Evidence & Source Ledger */}
+        <ReportSection n={20} title="Evidence & Source Ledger" subtitle="Traceable ledger of all 21 sources [E01 to E21] retrieved 5 Oct 2026.">
+          <div className="ledger-summary">
+            <div><strong>21</strong><span>Total citations</span></div>
+            <div><strong>8</strong><span>SEC filings</span></div>
+            <div><strong>68%</strong><span>Avg confidence</span></div>
+            <div><strong>5 Oct 2026</strong><span>Research date</span></div>
+          </div>
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>ID</th><th>Claim</th><th>Source</th><th>Type</th><th>Published</th><th>Confidence</th><th>Action</th></tr></thead>
+              <tbody>
+                {sutroEvidenceLedger.map((ev) => (
+                  <tr key={ev.id}>
+                    <td><button className="evidence-marker" onClick={() => setActiveEvidence(ev)}>[{ev.id}]</button></td>
+                    <td>{ev.claim}</td>
+                    <td>{ev.source}</td>
+                    <td><Badge tone="blue">{ev.type}</Badge></td>
+                    <td>{ev.published}</td>
+                    <td><Badge tone={ev.confidence.includes("High") ? "success" : ev.confidence.includes("Good") ? "blue" : "warning"}>{ev.confidence}</Badge></td>
+                    <td>
+                      <a href={ev.url} target="_blank" rel="noreferrer" className="btn btn-icon" title="Open source URL">
+                        <Icon name="external" size={14} />
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ReportSection>
+
+        {/* 21. Methodology / Trust */}
+        <ReportSection n={21} title="Methodology / Trust" subtitle="100-Point Scoring Model adapted for clinical-stage biotechnology.">
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Dimension</th><th>Score</th><th>Reason</th><th>Confidence</th></tr></thead>
+              <tbody>
+                {d.scoringBreakdown.map((row, i) => (
+                  <tr key={i} style={i === d.scoringBreakdown.length - 1 ? { fontWeight: "bold", background: "var(--slate-50)" } : {}}>
+                    <td>{row[0]}</td>
+                    <td><strong>{row[1]}</strong></td>
+                    <td>{row[2]}</td>
+                    <td><Badge tone={row[3].includes("High") ? "success" : row[3].includes("Moderate") ? "blue" : "warning"}>{row[3]}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="method-copy" style={{ marginTop: "16px" }}>
+            <div>
+              <strong>Compliance & Claim Controls</strong>
+              <p>• No invented contacts, emails, vendors or revenue.<br />• Company statements labeled as company claims.<br />• Funding & trial starts treated as demand signals, never buying intent.<br />• Unknown values never replaced with plausible text.</p>
+            </div>
+            <div>
+              <strong>Research Completeness (76%)</strong>
+              <p>14 elements complete (including access & reimbursement as N/A), 10 partial, 1 not researched (white space CRM data).</p>
+            </div>
+            <div>
+              <strong>Confidence Assessment (68%)</strong>
+              <p>Strong source authority for pipeline and SEC filings, reduced by assumed seller, unknown incumbent vendors, and unverified STRO-006 dosing start.</p>
+            </div>
+          </div>
+        </ReportSection>
+      </main>
+    </div>
+
+    {/* PDF Preview Modal */}
+    {showPdfPreview && <PdfPreviewModal onClose={() => setShowPdfPreview(false)} onDownload={handleDownloadPDF} />}
+
+    {/* Evidence Detail Drawer */}
+    {activeEvidence && (
+      <>
+        <div className="drawer-overlay" onClick={() => setActiveEvidence(null)} />
+        <aside className="source-drawer">
+          <div className="drawer-head">
+            <div>
+              <span>EVIDENCE RECORD</span>
+              <h2>Evidence [{activeEvidence.id}]</h2>
+            </div>
+            <Button variant="icon" icon="close" onClick={() => setActiveEvidence(null)} />
+          </div>
+          <Badge tone={activeEvidence.confidence.includes("High") ? "success" : "warning"}>
+            <Icon name="shield" size={12} /> {activeEvidence.confidence} confidence
+          </Badge>
+          <blockquote style={{ margin: "14px 0", fontSize: "13px", fontStyle: "italic", borderLeft: "3px solid var(--orange-500)", paddingLeft: "12px", color: "var(--slate-700)" }}>
+            “{activeEvidence.claim}”
+          </blockquote>
+          <div className="source-fields">
+            <div><span>Source</span><strong>{activeEvidence.source}</strong></div>
+            <div><span>Source type</span><strong>{activeEvidence.type}</strong></div>
+            <div><span>Published</span><strong>{activeEvidence.published}</strong></div>
+            <div><span>Retrieved</span><strong>{activeEvidence.retrieved}</strong></div>
+            <div><span>Verification Status</span><strong>{activeEvidence.verification}</strong></div>
+          </div>
+          <Button className="full-width" icon="external" onClick={() => window.open(activeEvidence.url, "_blank")}>
+            Open official source link
+          </Button>
+          <div className="source-method" style={{ marginTop: "14px" }}>
+            <Icon name="shield" />
+            <p><strong>Traceability Guarantee:</strong> Official government SEC filings and company releases provide primary evidence for this claim.</p>
+          </div>
+        </aside>
+      </>
+    )}
+
+    {toast && <div className="toast"><Icon name="check" />{toast}</div>}
+  </div>;
 }
 
-function SignalList({ title, items }: { title: string; items: string[] }) { return <div className="signal-list"><h3>{title}</h3>{items.map((x, i) => <div key={x}><span className={i < 2 ? "positive" : "unknown"}>{i < 2 ? <Icon name="trend" /> : "?"}</span><p><strong>{x.split(" — ")[0]}</strong><small>{x.split(" — ")[1]}</small></p><Evidence id={`E${i + 2}`.padStart(3, "0")} /></div>)}</div>; }
+function SignalList({ title, items }: { title: string; items: string[] }) { 
+  return <div className="signal-list"><h3>{title}</h3>{items.map((x, i) => <div key={x}><span className={i < 2 ? "positive" : "unknown"}>{i < 2 ? <Icon name="trend" /> : "?"}</span><p><strong>{x.split(" — ")[0]}</strong><small>{x.split(" — ")[1]}</small></p><Evidence id={`E0${i + 1}`} /></div>)}</div>; 
+}
 
 function Settings() {
   return <div className="page"><PageHeader title="Settings" subtitle="Manage your profile, workspace and intelligence preferences."><Button>Save changes</Button></PageHeader><div className="settings-layout"><aside>{["Profile", "Workspace", "Research Preferences", "Source Preferences", "Notification Preferences", "Security", "Data & Privacy"].map((x, i) => <button className={i === 3 ? "active" : ""} key={x}>{x}</button>)}</aside><Card className="settings-card"><div className="card-heading"><div><h2>Source Preferences</h2><p>Configure how the Intelligence Engine prioritizes sources during research.</p></div></div><div className="info-box"><Icon name="shield" /><p><strong>Source authority matters</strong>Higher-priority sources are used first for verification. Signals from lower-priority sources should be corroborated.</p></div><div className="source-order"><span>PRIORITY ORDER</span>{["Government / Regulatory", "Official Company", "Clinical", "Professional", "Financial", "Industry", "Social"].map((x, i) => <div key={x}><b>{i + 1}</b><Icon name={i < 3 ? "shield" : "briefcase"} /><div><strong>{x}</strong><small>{i < 3 ? "Primary authority for verification" : i < 5 ? "Supporting professional evidence" : "Signal source — corroboration preferred"}</small></div><Badge tone={i < 3 ? "success" : i < 5 ? "blue" : "warning"}>{i < 3 ? "Highest" : i < 5 ? "Standard" : "Signal only"}</Badge><Icon name="menu" /></div>)}</div><div className="settings-options"><label><span><strong>Require primary-source corroboration</strong><small>Flag material insights not supported by a primary source.</small></span><input type="checkbox" defaultChecked /><i /></label><label><span><strong>Show social signals</strong><small>Allow qualified social sources as non-authoritative signals.</small></span><input type="checkbox" /><i /></label></div></Card></div></div>;
