@@ -176,135 +176,1917 @@ function Login({ onLogin }: { onLogin: () => void }) {
   </div>;
 }
 
-function AppShell({ page, setPage, onSignOut, children }: { page: Page; setPage: (p: Page) => void; onSignOut: () => void; children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [profile, setProfile] = useState(false);
-  const [notifications, setNotifications] = useState(false);
+function AppShell({ page, setPage, onSignOut, activeCampaign, setActiveCampaign, campaigns, children }: { 
+  page: Page; 
+  setPage: (p: Page) => void; 
+  onSignOut: () => void; 
+  activeCampaign: string;
+  setActiveCampaign: (c: string) => void;
+  campaigns: string[][];
+  children: ReactNode 
+}) {
   const [search, setSearch] = useState("");
-  const [signout, setSignout] = useState(false);
-  const nav = [
-    { label: "Dashboard", icon: "home" as IconName, page: "dashboard" as Page, group: "Overview" },
-    { label: "Campaigns", icon: "campaign" as IconName, page: "campaigns" as Page, group: "Research" },
-    { label: "Accounts", icon: "accounts" as IconName, page: "accounts" as Page, group: "" },
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const navItems = [
+    { label: "Home", icon: "home" as IconName, page: "dashboard" as Page },
+    { label: "Campaigns", icon: "campaign" as IconName, page: "campaigns" as Page, count: campaigns.length },
+    { label: "Accounts", icon: "accounts" as IconName, page: "accounts" as Page, count: 1 },
+    { label: "Pipeline", icon: "trend" as IconName, page: "dashboard" as Page },
+    { label: "Outreach", icon: "spark" as IconName, page: "dashboard" as Page },
+    { label: "Settings", icon: "settings" as IconName, page: "settings" as Page },
   ];
-  return <div className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`}>
-    <aside className="sidebar">
-      <div className="sidebar-head"><Logo compact={collapsed} /><Button variant="icon" icon="menu" onClick={() => setCollapsed(!collapsed)} /></div>
-      {!collapsed && <div className="workspace-label"><span>Workspace</span><strong>Life Sciences Workspace</strong></div>}
-      <nav className="sidebar-nav">
-        {nav.map((item) => <div key={item.label}>{item.group && !collapsed && <div className="nav-group">{item.group}</div>}<button title={collapsed ? item.label : undefined} className={`nav-item ${page === item.page || (item.page === "accounts" && ["run-research", "running", "results", "report"].includes(page)) || (item.page === "campaigns" && page === "create-campaign") ? "active" : ""}`} onClick={() => setPage(item.page)}><Icon name={item.icon} size={18} />{!collapsed && <span>{item.label}</span>}{item.label === "Accounts" && !collapsed && <Badge tone="orange">50</Badge>}</button></div>)}
-      </nav>
-    </aside>
-    <div className="app-area">
-      <header className="topbar">
-        <div className="global-search"><Icon name="search" size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search accounts, campaigns, reports..." /><kbd>⌘ K</kbd>{search && <div className="search-results"><small>ACCOUNTS</small><button onClick={() => { setPage("report"); setSearch(""); }}><Icon name="briefcase" /> <span><strong>Cleveland Clinic</strong><small>Health System · Cleveland, OH</small></span></button><small>RESEARCH</small><button onClick={() => { setPage("results"); setSearch(""); }}><Icon name="activity" /> <span><strong>US Oncology Account Discovery</strong><small>Completed · 50 accounts</small></span></button><small>CAMPAIGNS</small><button onClick={() => { setPage("campaigns"); setSearch(""); }}><Icon name="campaign" /><span><strong>Oncology Expansion</strong><small>Active research campaign</small></span></button></div>}</div>
-        <div className="top-actions"><Button variant="icon" icon="help" /><div className="menu-anchor"><Button variant="icon" icon="bell" onClick={() => setNotifications(!notifications)} /><span className="notification-dot" />{notifications && <div className="popover notification-pop"><div className="popover-head"><strong>Notifications</strong><Badge tone="orange">3 new</Badge></div>{["Research completed — 50 accounts analyzed.", "New high-priority account detected.", "3 research gaps identified."].map((x, i) => <button key={x}><span className={`notif-icon n${i}`}><Icon name={i === 0 ? "check" : i === 1 ? "spark" : "help"} size={15} /></span><span><strong>{x}</strong><small>{i + 1}h ago</small></span></button>)}</div>}</div>
-          <div className="menu-anchor"><button className="user-button" onClick={() => setProfile(!profile)}><span className="avatar">P</span><span className="user-copy"><strong>Priya Mehta</strong><small>Commercial Strategy</small></span><Icon name="chevron" size={15} /></button>{profile && <div className="popover profile-pop"><button className="danger-text" onClick={() => { setProfile(false); setSignout(true); }}><Icon name="arrow" /> Sign out</button></div>}</div>
-        </div>
-      </header>
-      <main className="main-content">{children}</main>
-    </div>
-    {signout && <div className="modal-backdrop"><div className="dialog"><div className="dialog-icon"><Icon name="arrow" /></div><h2>Sign out of OutreachLens?</h2><p>You can sign back in at any time.</p><div className="dialog-actions"><Button variant="secondary" onClick={() => setSignout(false)}>Cancel</Button><Button onClick={onSignOut}>Sign out</Button></div></div></div>}
-  </div>;
-}
 
-function MetricCard({ icon, value, label, trend, tone = "" }: { icon: IconName; value: string; label: string; trend: string; tone?: string }) {
-  return <Card className="metric-card"><div className={`metric-icon ${tone}`}><Icon name={icon} /></div><div className="metric-copy"><small>{label}</small><strong>{value}</strong><span><Icon name="trend" size={13} /> {trend}</span></div><button className="info-dot" title={`Tracks ${label.toLowerCase()} within the selected period`}>i</button></Card>;
-}
-
-function Dashboard({ setPage }: { setPage: (p: Page) => void }) {
-  return <div className="page">
-    <PageHeader title="Life Sciences Workspace" subtitle="Account intelligence and research overview"><Button variant="secondary" icon="calendar">Last 30 days</Button><Button variant="secondary" icon="refresh">Refresh</Button><Button icon="plus" onClick={() => setPage("run-research")}>Run research</Button></PageHeader>
-    <div className="metrics-grid"><MetricCard icon="campaign" value="12" label="Active Research Campaigns" trend="2 added this month" tone="blue" /><MetricCard icon="activity" value="28" label="Research Runs" trend="12.5% vs last month" tone="orange" /><MetricCard icon="accounts" value="1,240" label="Accounts Researched" trend="184 this month" tone="emerald" /><MetricCard icon="spark" value="84" label="High-Priority Accounts" trend="6.8% of researched" tone="violet" /></div>
-    <div className="dashboard-grid">
-      <Card className="chart-card"><div className="card-heading"><div><h2>Research Activity</h2><p>Research runs and accounts analyzed</p></div><SelectField value="8 weeks"><option>8 weeks</option><option>12 weeks</option></SelectField></div><div className="chart-legend"><span><i className="legend-orange" /> Research runs</span><span><i className="legend-blue" /> Accounts analyzed</span></div><div className="line-chart"><div className="y-labels"><span>200</span><span>150</span><span>100</span><span>50</span><span>0</span></div><svg viewBox="0 0 700 220" preserveAspectRatio="none"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2563EB" stopOpacity=".18" /><stop offset="1" stopColor="#2563EB" stopOpacity="0" /></linearGradient></defs><path className="grid-line" d="M0 20h700M0 70h700M0 120h700M0 170h700M0 219h700" /><path className="area" d="M0 184L100 160 200 170 300 115 400 130 500 75 600 95 700 35V220H0Z" /><path className="line blue-line" d="M0 184L100 160 200 170 300 115 400 130 500 75 600 95 700 35" /><path className="line orange-line" d="M0 205L100 185 200 192 300 172 400 180 500 145 600 153 700 125" /></svg><div className="x-labels"><span>Aug 12</span><span>Aug 26</span><span>Sep 09</span><span>Sep 23</span><span>Oct 07</span></div></div></Card>
-      <Card className="priority-card"><div className="card-heading"><div><h2>Account Priority</h2><p>Distribution across all results</p></div><Button variant="icon" icon="more" /></div><div className="donut-wrap"><div className="donut"><div><strong>1,240</strong><small>Total accounts</small></div></div></div><div className="priority-list"><div><span><i className="dot high" /> High priority</span><strong>84 <small>7%</small></strong></div><div><span><i className="dot medium" /> Medium priority</span><strong>682 <small>55%</small></strong></div><div><span><i className="dot low" /> Low priority</span><strong>474 <small>38%</small></strong></div></div></Card>
-    </div>
-    <Card className="table-card"><div className="card-heading"><div><h2>Recent Research Runs</h2><p>Latest intelligence activity across your workspace</p></div><Button variant="ghost" onClick={() => setPage("accounts")}>View all <Icon name="arrow" /></Button></div><div className="table-scroll"><table><thead><tr><th>Research name</th><th>Campaign</th><th>Requested</th><th>Found</th><th>High priority</th><th>Status</th><th>Created</th><th /></tr></thead><tbody>{[
-      ["Oncology Account Discovery", "US Oncology Hospital Expansion", "50", "50", "18", "Completed", "Oct 04, 2026"],
-      ["HER2 Provider Research", "HER2 Market Opportunity", "100", "84", "24", "Partial Results", "Oct 02, 2026"],
-      ["Specialty Pharmacy Scan", "Specialty Pharmacy Expansion", "75", "—", "—", "Running", "Oct 01, 2026"],
-    ].map((r) => <tr key={r[0]}><td><button className="table-link" onClick={() => setPage("results")}>{r[0]}</button></td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td><strong>{r[4]}</strong></td><td><Badge tone={r[5] === "Completed" ? "success" : r[5] === "Running" ? "blue" : "warning"}>{r[5]}</Badge></td><td>{r[6]}</td><td><Button variant="icon" icon="arrow" onClick={() => setPage("results")} /></td></tr>)}</tbody></table></div></Card>
-    <Card className="signals-card"><div className="card-heading"><div><h2>Recent Intelligence Signals</h2><p>Evidence-backed changes with potential commercial relevance</p></div><Button variant="ghost">View signal library</Button></div><div className="signal-grid">{[
-      ["Clinical development", "Cleveland Clinic", "New oncology treatment center expansion announced", "Official company", "High", "Oct 04"],
-      ["Executive appointment", "Mayo Clinic", "New chair appointed to oncology department", "Professional", "Medium", "Oct 03"],
-      ["Procurement signal", "Mass General Brigham", "Specialty pharmacy vendor review detected", "Industry", "Medium", "Oct 02"],
-    ].map((s, i) => <div className="signal-item" key={s[0]}><div className={`signal-icon s${i}`}><Icon name={i === 0 ? "activity" : i === 1 ? "users" : "briefcase"} /></div><div><span className="signal-meta">{s[5]} · {s[0]}</span><strong>{s[1]}</strong><p>{s[2]}</p><span className="source-chip"><Icon name="shield" size={12} /> {s[3]}</span></div><Badge tone={s[4] === "High" ? "success" : "warning"}>{s[4]} confidence</Badge></div>)}</div></Card>
-  </div>;
-}
-
-function FilterBar({ placeholder = "Search..." }: { placeholder?: string }) {
-  return <div className="filter-bar"><div className="filter-search"><Icon name="search" /><input placeholder={placeholder} /></div><Button variant="secondary" icon="filter">Filters <Badge tone="orange">2</Badge></Button><Button variant="secondary">Status <Icon name="chevron" size={14} /></Button><Button variant="secondary">Therapeutic Area <Icon name="chevron" size={14} /></Button><Button variant="ghost">Clear all</Button><div className="spacer" /><Button variant="secondary">Save view</Button></div>;
-}
-
-function Campaigns({ setPage, campaigns = campaignRows, successMessage, onClearSuccess }: { setPage: (p: Page) => void; campaigns?: string[][]; successMessage?: string | null; onClearSuccess?: () => void }) {
-  return <div className="page">
-    {successMessage && (
-      <div className="success-banner" style={{ marginBottom: "18px", padding: "12px 18px", background: "var(--emerald-50)", border: "1px solid #a7f3d0", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#065f46" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "var(--emerald-500)", color: "white", display: "grid", placeItems: "center" }}><Icon name="check" size={14} /></span>
-          <div>
-            <strong style={{ display: "block", fontSize: "13px" }}>Campaign created successfully!</strong>
-            <span style={{ fontSize: "12px", color: "#047857" }}>{successMessage}</span>
+  return (
+    <div className="lens-app-shell">
+      {/* DARK NAVY LEFT SIDEBAR */}
+      <aside className="lens-sidebar">
+        <div className="lens-brand-header">
+          <div className="lens-logo-badge" style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+            <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)", display: "grid", placeItems: "center", boxShadow: "0 0 12px rgba(56, 189, 248, 0.5)" }}>
+              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#05050d" }} />
+            </div>
+            <div className="lens-logo-text">
+              <strong style={{ fontSize: "14px", fontWeight: "800", letterSpacing: "-0.02em", color: "#ffffff" }}>Outreach</strong>
+              <small style={{ display: "inline-block", marginLeft: "4px", fontSize: "9.5px", color: "#818cf8", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.06em" }}>LENS</small>
+            </div>
           </div>
         </div>
-        {onClearSuccess && <button onClick={onClearSuccess} style={{ border: 0, background: "transparent", cursor: "pointer", color: "#047857" }}><Icon name="close" size={16} /></button>}
+
+        {/* WORKSPACE SELECTOR */}
+        <div className="lens-sidebar-section">
+          <div className="lens-section-label">WORKSPACE</div>
+          <div className="lens-workspace-box">
+            <span>Pavan Varma's Workspace</span>
+            <Icon name="chevron" size={14} />
+          </div>
+        </div>
+
+        {/* ACTIVE CAMPAIGN SELECTOR */}
+        <div className="lens-sidebar-section">
+          <div className="lens-section-label">ACTIVE CAMPAIGN</div>
+          <div className="lens-active-campaign-select">
+            <select value={activeCampaign} onChange={(e) => setActiveCampaign(e.target.value)}>
+              {campaigns.map((c) => (
+                <option key={c[0]} value={c[0]}>{c[0].slice(0, 24)}...</option>
+              ))}
+            </select>
+            <Icon name="chevron" size={14} />
+          </div>
+        </div>
+
+        {/* NAVIGATION LINKS */}
+        <nav className="lens-nav-list">
+          {navItems.map((item) => {
+            const isActive = page === item.page || (item.page === "campaigns" && page === "create-campaign") || (item.page === "accounts" && ["run-research", "running", "results", "report"].includes(page));
+            return (
+              <button
+                key={item.label}
+                className={`lens-nav-btn ${isActive ? "active" : ""}`}
+                onClick={() => setPage(item.page)}
+              >
+                <div className="lens-nav-left">
+                  <Icon name={item.icon} size={17} />
+                  <span>{item.label}</span>
+                </div>
+                {item.count !== undefined && (
+                  <span className={`lens-nav-badge ${isActive ? "active-badge" : ""}`}>{item.count}</span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* AGENTIC AI LIVE STATUS CHIP */}
+        <div className="lens-sidebar-agent-card">
+          <div className="lens-agent-dot-pulse" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: "11px", fontWeight: "700", color: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span>Agentic Engine</span>
+              <span style={{ fontSize: "9px", color: "#34d399", background: "rgba(52, 211, 153, 0.12)", padding: "1px 6px", borderRadius: "10px" }}>ONLINE</span>
+            </div>
+            <span style={{ fontSize: "10px", color: "#818cf8", display: "block", marginTop: "1px" }}>Autonomous account sync</span>
+          </div>
+        </div>
+
+        {/* USER PROFILE BOTTOM */}
+        <div className="lens-sidebar-footer">
+          <div className="lens-user-row" onClick={() => setProfileOpen(!profileOpen)}>
+            <div className="lens-user-avatar">P</div>
+            <div className="lens-user-info">
+              <strong>Pavan Dantuluri</strong>
+              <small>prabha44556@gmail.c...</small>
+            </div>
+            <Icon name="chevron" size={14} />
+          </div>
+          {profileOpen && (
+            <div className="lens-profile-menu">
+              <button onClick={() => { setProfileOpen(false); setPage("settings"); }}>
+                <Icon name="settings" size={14} /> Workspace Settings
+              </button>
+              <button className="lens-danger-btn" onClick={onSignOut}>
+                <Icon name="arrow" size={14} /> Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* RIGHT MAIN WORKSPACE */}
+      <div className="lens-main-wrapper">
+        {/* TOP BAR WITH SEARCH & ASK LENS ANYTHING */}
+        <header className="lens-topbar">
+          <div className="lens-topbar-left">
+            {/* Title / Breadcrumbs */}
+            <div className="lens-breadcrumb-trail">
+              <strong style={{ textTransform: "capitalize", fontSize: "14px", color: "#1e293b" }}>
+                {page === "create-campaign" ? "Create Campaign" : page === "report" ? "Company Intelligence" : page}
+              </strong>
+              <div style={{ fontSize: "11px", color: "#94a3b8" }}>
+                Home &nbsp;/&nbsp; <span style={{ textTransform: "capitalize" }}>{page}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="lens-topbar-right">
+            <div className="lens-ai-searchbox">
+              <span className="lens-sparkle-dot">✨</span>
+              <input 
+                placeholder="Ask Lens anything..." 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+              />
+              <kbd>⌘K</kbd>
+            </div>
+            <button className="lens-icon-btn" onClick={() => setPage("settings")} title="Settings">
+              <Icon name="settings" size={17} />
+            </button>
+          </div>
+        </header>
+
+        {/* MAIN BODY AREA */}
+        <main className="lens-content-area">
+          {children}
+        </main>
+
+        {/* FLOATING LENS CO-PILOT WIDGET */}
+        <div className="lens-copilot-widget" title="Open Lens Co-Pilot" onClick={() => alert("Lens AI Co-Pilot ready to assist with account research & outreach generation.")}>
+          <div className="lens-copilot-orb">
+            <span className="lens-copilot-spark" />
+            <Icon name="activity" size={18} />
+          </div>
+          <span className="lens-copilot-label">LENS CO-PILOT</span>
+        </div>
       </div>
-    )}
-    <PageHeader title="Research Campaigns" subtitle="Define and preserve the research context used by the Intelligence Engine."><Button icon="plus" onClick={() => setPage("create-campaign")}>Create Campaign</Button></PageHeader><div className="context-banner"><Icon name="shield" /><div><strong>Campaigns preserve research context — they do not execute outreach.</strong><span>Accounts and intelligence reports are created through a Research Run.</span></div><button>Learn more</button></div><FilterBar placeholder="Search campaigns..." /><Card className="table-card campaign-table"><div className="table-scroll"><table><thead><tr><th>Campaign name</th><th>Research purpose</th><th>Product / solution</th><th>Target account type</th><th>Therapeutic area</th><th>Geography</th><th>Runs</th><th>Created</th><th>Status</th><th /></tr></thead><tbody>{campaigns.map((r) => <tr key={r[0]}><td><button className="table-link">{r[0]}</button></td><td className="purpose-cell">{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td><td><strong>{r[6]}</strong></td><td>{r[7]}</td><td><Badge tone={r[8] === "Active" ? "success" : "neutral"}>{r[8]}</Badge></td><td><Button variant="icon" icon="more" /></td></tr>)}</tbody></table></div><div className="table-footer"><span>Showing {campaigns.length} of {campaigns.length} campaigns</span><div><Button variant="secondary">Previous</Button><Button variant="secondary">Next</Button></div></div></Card></div>;
+    </div>
+  );
 }
 
-const wizardSteps = ["Research Context", "Product Context", "Target Account", "Research Parameters", "Supporting Documents", "Review"];
-function CreateCampaign({ setPage, onSave }: { setPage: (p: Page) => void; onSave: (campaign: string[]) => void }) {
-  const [step, setStep] = useState(0);
-  const [name, setName] = useState("US Oncology Hospital Expansion");
-  const [objective, setObjective] = useState("Identify high-potential US oncology health systems with relevant treatment capacity for Product X.");
-  const [product, setProduct] = useState("OncoNova X");
-  const [therapy, setTherapy] = useState("Oncology");
-  const [accountType, setAccountType] = useState("Hospital / Health System");
-  const [geography, setGeography] = useState("United States");
+function Campaigns({ 
+  setPage, 
+  campaigns = campaignRows, 
+  successMessage, 
+  onClearSuccess,
+  onUseCampaign 
+}: { 
+  setPage: (p: Page) => void; 
+  campaigns?: string[][]; 
+  successMessage?: string | null; 
+  onClearSuccess?: () => void;
+  onUseCampaign?: (name: string) => void;
+}) {
+  const [search, setSearch] = useState("");
 
-  const handleSave = () => {
-    const newCampaign = [
-      name || "New Research Campaign",
-      objective || "Identify high-potential target accounts.",
-      product || "OncoNova X",
-      accountType || "Hospital / Health System",
-      therapy || "Oncology",
-      geography || "United States",
-      "0",
-      "Today",
-      "Active"
-    ];
-    onSave(newCampaign);
+  const filtered = campaigns.filter(c => 
+    c[0].toLowerCase().includes(search.toLowerCase()) || 
+    c[1].toLowerCase().includes(search.toLowerCase()) ||
+    c[2].toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="lens-page-body">
+      {successMessage && (
+        <div className="success-banner" style={{ marginBottom: "18px", padding: "12px 18px", background: "var(--emerald-50)", border: "1px solid #a7f3d0", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#065f46" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "var(--emerald-500)", color: "white", display: "grid", placeItems: "center" }}><Icon name="check" size={14} /></span>
+            <div>
+              <strong style={{ display: "block", fontSize: "13px" }}>Campaign created successfully!</strong>
+              <span style={{ fontSize: "12px", color: "#047857" }}>{successMessage}</span>
+            </div>
+          </div>
+          {onClearSuccess && <button onClick={onClearSuccess} style={{ border: 0, background: "transparent", cursor: "pointer", color: "#047857" }}><Icon name="close" size={16} /></button>}
+        </div>
+      )}
+
+      <div className="lens-page-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "12px", marginTop: "4px" }}>
+        <div>
+          <h1 className="lens-page-title" style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", margin: "0 0 2px" }}>Campaigns</h1>
+          <p className="lens-page-subtitle" style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>Define what you sell, to whom, and how. Every research is anchored to a campaign.</p>
+        </div>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <Button 
+            variant="primary" 
+            onClick={() => setPage("create-campaign")}
+            style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)", color: "white", borderRadius: "8px", fontWeight: "600", fontSize: "12.5px", height: "36px", padding: "0 14px", boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)" }}
+          >
+            <Icon name="plus" size={14} /> + New Campaign
+          </Button>
+        </div>
+      </div>
+
+      <Card className="lens-table-card">
+        <div className="table-scroll">
+          <table className="lens-table">
+            <thead>
+              <tr>
+                <th>CAMPAIGN</th>
+                <th>PRODUCT</th>
+                <th>INDUSTRY PACK</th>
+                <th>TARGET INDUSTRY</th>
+                <th>GEOGRAPHY</th>
+                <th>STATUS</th>
+                <th style={{ textAlign: "right" }}>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r, idx) => (
+                <tr key={idx}>
+                  <td>
+                    <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px" }}>{r[0]}</div>
+                    <span className="badge badge-orange" style={{ fontSize: "10px", marginTop: "3px", padding: "1px 6px" }}>Active</span>
+                  </td>
+                  <td style={{ color: "#475569", fontSize: "12.5px" }}>{r[2] || "Early-Phase Oncology Support"}</td>
+                  <td style={{ color: "#64748b", fontSize: "12px" }}>Standard B2B</td>
+                  <td style={{ color: "#475569", fontSize: "12px", maxWidth: "260px", whiteSpace: "normal" }}>
+                    Biotechnology, Pharmaceutical Manufacturing, Oncology Drug Development
+                  </td>
+                  <td style={{ color: "#475569", fontSize: "12px" }}>{r[5] || "North America, Western Europe"}</td>
+                  <td>
+                    <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", borderRadius: "99px", fontSize: "10.5px", fontWeight: "700", letterSpacing: ".04em" }}>
+                      LIVE
+                    </span>
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <div style={{ display: "inline-flex", gap: "6px" }}>
+                      <button 
+                        className="lens-action-btn"
+                        onClick={() => {
+                          onUseCampaign?.(r[0]);
+                          setPage("accounts");
+                        }}
+                      >
+                        Use
+                      </button>
+                      <button 
+                        className="lens-action-btn"
+                        onClick={() => setPage("create-campaign")}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* BOTTOM ATTACHED PAGINATION BAR */}
+        <div className="lens-pagination-bar">
+          <div>
+            Showing <strong>1–{filtered.length}</strong> of <strong>{campaigns.length}</strong> campaigns
+          </div>
+          <div className="lens-pagination-controls">
+            <button className="lens-pagination-btn" disabled>
+              <Icon name="arrow" size={12} style={{ transform: "rotate(180deg)" }} /> Previous
+            </button>
+            <button className="lens-pagination-btn active">1</button>
+            <button className="lens-pagination-btn" disabled>
+              Next <Icon name="arrow" size={12} />
+            </button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+
+// ----------------------------------------------------
+// CREATE CAMPAIGN - STRUCTURED 4-STEP WIZARD
+// ----------------------------------------------------
+
+export interface CampaignProfile {
+  campaign_name: string;
+  product_service: string;
+  website?: string;
+  use_cases: string[];
+  problems_solved: string[];
+  differentiator?: string;
+  industries: string[];
+  company_types: string[];
+  geographies: string[];
+  company_size: string[];
+  company_stage: string[];
+  revenue_range: string[];
+  exclusions: string[];
+  primary_research_focus: string[];
+  secondary_research_focus: string[];
+  primary_roles: string[];
+  secondary_roles: string[];
+  contact_requirements: {
+    currentlyInRole: boolean;
+    publiclyVerifiable: boolean;
+    relevantToOpportunity: boolean;
+    recentActivityPreferred: boolean;
+  };
+  sales_motion: string;
+  channels: string[];
+  tone: string;
+  objective: string;
+  sender_name: string;
+}
+
+const USE_CASE_OPTIONS = [
+  "Clinical Trial Execution",
+  "CRO Management",
+  "Clinical Operations Scaling",
+  "CMC Support",
+  "Manufacturing Support",
+  "Regulatory Support",
+  "Analytical Development",
+  "Technology Implementation",
+  "Consulting",
+  "Managed Services",
+];
+
+const PROBLEM_OPTIONS = [
+  "Limited Internal Capacity",
+  "High Operational Complexity",
+  "Vendor Coordination",
+  "Slow Execution",
+  "Cost Pressure",
+  "Regulatory Complexity",
+  "Scaling Challenges",
+  "Data / Visibility Gaps",
+  "Resource Constraints",
+  "Technology Gaps",
+];
+
+const INDUSTRY_OPTIONS = [
+  "Biotechnology",
+  "Pharmaceutical",
+  "Medical Devices",
+  "CRO",
+  "CDMO",
+  "Healthcare",
+  "Clinical Research",
+  "Software / Technology",
+  "Manufacturing",
+  "Financial Services",
+];
+
+const COMPANY_TYPE_OPTIONS = [
+  "Startup",
+  "Growth-stage company",
+  "Public company",
+  "Private company",
+  "Enterprise",
+  "Drug Developer",
+  "Specialty Pharma",
+  "Research Organization",
+  "Service Provider",
+];
+
+const GEOGRAPHY_OPTIONS = [
+  "North America",
+  "United States",
+  "Canada",
+  "Western Europe",
+  "UK",
+  "Europe",
+  "Asia Pacific",
+  "India",
+];
+
+const COMPANY_SIZE_OPTIONS = [
+  "1–50",
+  "50–250",
+  "250–500",
+  "500–1,000",
+  "1,000–5,000",
+  "5,000+",
+];
+
+const COMPANY_STAGE_OPTIONS = [
+  "Pre-discovery",
+  "Preclinical",
+  "Clinical-stage",
+  "Commercial-stage",
+  "Growth-stage",
+  "Mature / Established",
+];
+
+const REVENUE_OPTIONS = [
+  "<$10M",
+  "$10M–$50M",
+  "$50M–$100M",
+  "$100M–$500M",
+  "$500M+",
+];
+
+const EXCLUSION_OPTIONS = [
+  "Pre-discovery companies",
+  "Companies outside target geography",
+  "Below minimum company size",
+  "No relevant product/program",
+  "Government organizations",
+  "Competitors",
+  "Existing customers",
+];
+
+const RESEARCH_FOCUS_OPTIONS = [
+  { id: "Clinical & Pipeline", label: "Clinical & Pipeline", desc: "Clinical programs, development stages, milestones and upcoming events." },
+  { id: "Buying & Demand Signals", label: "Buying & Demand Signals", desc: "Signals indicating potential business need or purchasing activity." },
+  { id: "Funding & Financial", label: "Funding & Financial", desc: "Capital raises, runway status, public offerings, and financial health." },
+  { id: "CMC & Manufacturing", label: "CMC & Manufacturing", desc: "Manufacturing strategy, CMC activity, facilities and external manufacturing." },
+  { id: "Regulatory", label: "Regulatory", desc: "FDA/EMA filings, orphan designations, IND approvals and meeting updates." },
+  { id: "Partnerships & Licensing", label: "Partnerships & Licensing", desc: "Co-development deals, in/out-licensing agreements, and M&A activity." },
+  { id: "Procurement & Vendor Activity", label: "Procurement & Vendor Activity", desc: "RFP releases, vendor evaluations, and supply chain contract changes." },
+  { id: "Market & Competitive", label: "Market & Competitive", desc: "Competitive positioning, market entry, and commercial differentiation." },
+  { id: "Hiring & Workforce", label: "Hiring & Workforce", desc: "Department expansions, key technical hires, and headcount growth." },
+  { id: "Leadership Changes", label: "Leadership Changes", desc: "C-suite appointments, board changes, and committee transitions." },
+  { id: "Expansion / Facilities", label: "Expansion / Facilities", desc: "New labs, clinical sites, cleanrooms, and regional footprints." },
+  { id: "Technology / R&D", label: "Technology / R&D", desc: "New patent grants, technological platforms, and novel assays." },
+];
+
+const ROLE_CATEGORIES = [
+  {
+    category: "Executive",
+    roles: ["CEO / Founder", "COO", "CFO"],
+  },
+  {
+    category: "Clinical",
+    roles: ["CMO", "VP Clinical Development", "VP Clinical Operations"],
+  },
+  {
+    category: "Technical",
+    roles: ["CTO", "VP CMC", "VP Manufacturing"],
+  },
+  {
+    category: "Scientific",
+    roles: ["CSO", "VP Research"],
+  },
+  {
+    category: "Commercial",
+    roles: ["VP Business Development", "Strategic Partnerships"],
+  },
+  {
+    category: "Procurement",
+    roles: ["Head of Procurement", "Vendor Management"],
+  },
+];
+
+const SECONDARY_ROLE_OPTIONS = [
+  "Director Clinical Operations",
+  "Director CMC",
+  "Director Manufacturing",
+  "Director Regulatory",
+  "Director Business Development",
+  "Program Director",
+  "Procurement Manager",
+];
+
+const EXISTING_PRODUCTS = [
+  "Clinical Operations Support",
+  "OncoNova X",
+  "ADC Clinical & CMC Ops",
+  "TheraMab Platform",
+  "Immunexa Solutions",
+  "Regulatory Submissions Suite",
+];
+
+function CreateCampaign({ setPage, onSave }: { setPage: (p: Page) => void; onSave: (campaign: string[], profile: CampaignProfile) => void }) {
+  const [step, setStep] = useState<number>(0);
+  const [showReview, setShowReview] = useState<boolean>(false);
+
+  // STEP 1 State
+  const [name, setName] = useState<string>("North America Oncology ADC Growth 2026");
+  const [product, setProduct] = useState<string>("Clinical Operations Support");
+  const [customProductInput, setCustomProductInput] = useState<string>("");
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState<boolean>(false);
+  const [website, setWebsite] = useState<string>("https://clinicalops-solutions.io");
+  const [useCases, setUseCases] = useState<string[]>(["Clinical Trial Execution", "CRO Management"]);
+  const [problems, setProblems] = useState<string[]>(["Limited Internal Capacity", "Vendor Coordination", "Slow Execution"]);
+  const [differentiator, setDifferentiator] = useState<string>("Dedicated oncology project teams with 48-hour site initiation speed.");
+
+  // STEP 2 State
+  const [industries, setIndustries] = useState<string[]>(["Biotechnology", "Pharmaceutical"]);
+  const [companyTypes, setCompanyTypes] = useState<string[]>(["Growth-stage company", "Drug Developer"]);
+  const [geographies, setGeographies] = useState<string[]>(["North America", "United States"]);
+  const [companySizes, setCompanySizes] = useState<string[]>(["50–250", "250–500"]);
+  const [companyStages, setCompanyStages] = useState<string[]>(["Clinical-stage"]);
+  const [revenueRanges, setRevenueRanges] = useState<string[]>(["$10M–$50M"]);
+  const [exclusions, setExclusions] = useState<string[]>(["Pre-discovery companies", "Government organizations"]);
+  const [customExclusionInput, setCustomExclusionInput] = useState<string>("");
+  const [showCustomExclusion, setShowCustomExclusion] = useState<boolean>(false);
+
+  // Research Focus State
+  const [primaryFocus, setPrimaryFocus] = useState<string[]>(["Clinical & Pipeline", "CMC & Manufacturing"]);
+  const [secondaryFocus, setSecondaryFocus] = useState<string[]>(["Funding & Financial", "Regulatory"]);
+
+  // STEP 3 State
+  const [primaryRoles, setPrimaryRoles] = useState<string[]>(["CMO", "VP Clinical Operations", "VP CMC"]);
+  const [secondaryRoles, setSecondaryRoles] = useState<string[]>(["Director Clinical Operations", "Director CMC"]);
+  const [contactReqs, setContactReqs] = useState({
+    currentlyInRole: true,
+    publiclyVerifiable: true,
+    relevantToOpportunity: true,
+    recentActivityPreferred: true,
+  });
+
+  // STEP 4 State
+  const [salesMotion, setSalesMotion] = useState<string>("Enterprise / Consultative");
+  const [channels, setChannels] = useState<string[]>(["Email", "LinkedIn"]);
+  const [tone, setTone] = useState<string>("Consultative");
+  const [goal, setGoal] = useState<string>("Book Discovery Meeting");
+  const [senderName, setSenderName] = useState<string>("Priya Mehta");
+
+  // Validation States
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Helper toggle functions
+  const toggleItem = (list: string[], setList: (l: string[]) => void, item: string, max?: number) => {
+    if (list.includes(item)) {
+      setList(list.filter((x) => x !== item));
+    } else {
+      if (max && list.length >= max) return;
+      setList([...list, item]);
+    }
   };
 
-  return <div className="page wizard-page"><div className="back-link" onClick={() => setPage("campaigns")}><Icon name="arrow" /> Back to Campaigns</div><PageHeader title="Create Research Campaign" subtitle="Build a reusable research configuration for account discovery." /><div className="wizard-layout"><aside className="wizard-steps">{wizardSteps.map((s, i) => <button key={s} className={`${i === step ? "active" : ""} ${i < step ? "complete" : ""}`} onClick={() => setStep(i)}><span>{i < step ? <Icon name="check" size={14} /> : i + 1}</span><div><strong>{s}</strong><small>{["Define objectives", "Describe your product", "Choose organization types", "Set discovery criteria", "Add internal context", "Confirm configuration"][i]}</small></div></button>)}</aside><Card className="wizard-card">
-    <div className="wizard-top"><div><span>STEP {step + 1} OF 6</span><h2>{wizardSteps[step]}</h2><p>{["Tell the Intelligence Engine what you are trying to learn and why.", "Provide factual product context to assess account relevance.", "Select the organization type this research should discover.", "Define where and how the Intelligence Engine should search.", "Provide approved materials and internal research context.", "Review the complete research configuration before saving."][step]}</p></div><span className="autosave"><Icon name="check" size={13} /> Draft saved</span></div>
-    {step === 0 && <div className="form-stack"><div className="form-grid"><Field label="Campaign name" value={name} onChange={setName} /><SelectField label="Sales objective"><option>New Customer Acquisition</option><option>Product Launch</option><option>Competitive Displacement</option><option>Market Expansion</option></SelectField></div><TextArea label="Research objective" placeholder="Identify high-potential US oncology health systems with relevant treatment capacity..." /><TextArea label="Business purpose" placeholder="Explain how this research will support the commercial team..." /><TextArea label="What are we trying to learn?" placeholder="Describe the specific account characteristics, signals, and evidence needed." /></div>}
-    {step === 1 && <div className="form-stack"><div className="form-grid"><Field label="Product / brand" value={product} onChange={setProduct} /><Field label="Generic name" placeholder="Enter generic name" /><SelectField label="Therapeutic area" value={therapy} onChange={setTherapy}><option>Oncology</option><option>Immunology</option><option>Rare Disease</option></SelectField><Field label="Indication" value="HER2-positive breast cancer" /><SelectField label="Modality"><option>Monoclonal antibody</option><option>Small molecule</option></SelectField><SelectField label="Product stage"><option>Commercial</option><option>Phase III</option><option>Pre-launch</option></SelectField></div><TextArea label="Product value proposition" /><TextArea label="Key differentiators" /><div className="info-box"><Icon name="shield" /><p><strong>Evidence and claims policy</strong>These materials provide context to the Intelligence Engine. AI-generated insights must remain evidence-backed and must not invent product claims.</p></div></div>}
-    {step === 2 && <div className="account-type-grid">{["Hospital / Health System", "IDN", "Specialty Clinic", "Physician / HCP", "Payer", "PBM", "Specialty Pharmacy", "GPO", "Distributor", "Government / Institutional", "Other"].map((x) => <button className={accountType === x ? "selected" : ""} key={x} onClick={() => setAccountType(x)}><span><Icon name="activity" /></span><strong>{x}</strong>{accountType === x && <Icon name="check" size={15} />}</button>)}</div>}
-    {step === 3 && <div className="form-stack"><div className="form-grid"><SelectField label="Geography" value={geography} onChange={setGeography}><option>United States</option><option>Canada</option><option>United States & Canada</option></SelectField><Field label="State / province" value="Ohio, New York, California, Texas" /><Field label="Company size" value="1,000+ employees" /><Field label="Revenue range" placeholder="Optional" /><Field label="Therapeutic area" value={therapy} /><Field label="Specialty" value="Medical Oncology, Surgical Oncology" /></div><TextArea label="Relevant business characteristics" placeholder="Academic medical center, active clinical research, specialty expansion..." /><details className="advanced"><summary>Advanced Research Criteria <Icon name="chevron" /></summary><div className="form-grid"><Field label="Minimum facilities" placeholder="e.g. 5" /><Field label="Signal recency" value="Last 12 months" /></div></details></div>}
-    {step === 4 && <div className="form-stack"><div className="upload-zone"><div className="upload-icon"><Icon name="upload" /></div><h3>Upload supporting documents</h3><p>Drag and drop or browse PDF, DOCX, PPTX, or XLSX files.</p><Button variant="secondary">Browse files</Button><small>Maximum file size: 25 MB</small></div><div className="file-card"><span className="pdf-icon">PDF</span><div><strong>OncoNova_Product_Profile.pdf</strong><small>2.4 MB · Upload complete</small></div><Badge tone="success"><Icon name="check" size={12} /> Ready</Badge><Button variant="icon" icon="close" /></div><TextArea label="Why are these documents being provided?" placeholder="Add optional notes for the research team..." /><div className="info-box neutral"><Icon name="help" /><p>Supporting documents are used as research context and are not automatically treated as verified external evidence.</p></div></div>}
-    {step === 5 && <div className="review-grid">{[
-      ["Research Purpose", objective, "Sales Objective", "New Customer Acquisition"],
-      ["Product", `${product} · HER2-positive breast cancer`, "Therapeutic Area", therapy],
-      ["Target Account Type", accountType, "Geography", geography],
-      ["Research Criteria", "1,000+ employees · Oncology centers · Active clinical programs", "Documents", "1 supporting document"],
-    ].map((r) => <div className="review-card" key={r[0]}><span>{r[0]}</span><strong>{r[1]}</strong><span>{r[2]}</span><strong>{r[3]}</strong></div>)}</div>}
-    <div className="wizard-actions"><Button variant="secondary" onClick={() => step === 0 ? setPage("campaigns") : setStep(step - 1)}>{step === 0 ? "Cancel" : "Back"}</Button><span /><Button onClick={() => step === 5 ? handleSave() : setStep(step + 1)}>{step === 5 ? "Save Campaign" : "Continue"} <Icon name="arrow" /></Button></div>
-  </Card></div></div>;
+  const setResearchSignal = (id: string, priority: "primary" | "secondary" | "none") => {
+    const totalSelected = (primaryFocus.includes(id) ? 0 : 1) + (secondaryFocus.includes(id) ? 0 : 1) + primaryFocus.length + secondaryFocus.length - (primaryFocus.includes(id) || secondaryFocus.includes(id) ? 1 : 0);
+    
+    if (priority === "none") {
+      setPrimaryFocus(primaryFocus.filter((x) => x !== id));
+      setSecondaryFocus(secondaryFocus.filter((x) => x !== id));
+      return;
+    }
+
+    if (totalSelected > 6 && !primaryFocus.includes(id) && !secondaryFocus.includes(id)) {
+      return; // Max 6 total research focuses
+    }
+
+    if (priority === "primary") {
+      setSecondaryFocus(secondaryFocus.filter((x) => x !== id));
+      if (!primaryFocus.includes(id)) setPrimaryFocus([...primaryFocus, id]);
+    } else if (priority === "secondary") {
+      setPrimaryFocus(primaryFocus.filter((x) => x !== id));
+      if (!secondaryFocus.includes(id)) setSecondaryFocus([...secondaryFocus, id]);
+    }
+  };
+
+  const validateStep = (currentStep: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (currentStep === 0) {
+      if (!name.trim() || name.trim().length < 3) newErrors.name = "Campaign name is required (min 3 characters).";
+      if (!product.trim()) newErrors.product = "Product / Service is required.";
+      if (useCases.length === 0) newErrors.useCases = "Select at least 1 primary use case (max 3).";
+      if (problems.length === 0) newErrors.problems = "Select at least 1 problem solved (max 5).";
+    } else if (currentStep === 1) {
+      if (industries.length === 0) newErrors.industries = "Select at least 1 primary industry.";
+      if (companyTypes.length === 0) newErrors.companyTypes = "Select at least 1 company type.";
+      if (geographies.length === 0) newErrors.geographies = "Select at least 1 geography.";
+      if (companySizes.length === 0) newErrors.companySizes = "Select at least 1 company size range.";
+      if (primaryFocus.length === 0 && secondaryFocus.length === 0) newErrors.researchFocus = "Select at least 1 research focus signal.";
+    } else if (currentStep === 2) {
+      if (primaryRoles.length === 0) newErrors.primaryRoles = "Select at least 1 primary contact role.";
+    } else if (currentStep === 3) {
+      if (!salesMotion) newErrors.salesMotion = "Select a sales motion.";
+      if (channels.length === 0) newErrors.channels = "Select at least 1 primary channel.";
+      if (!goal) newErrors.goal = "Select an outreach goal.";
+      if (!senderName.trim()) newErrors.senderName = "Sender name is required.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(step)) {
+      if (step < 3) {
+        setStep(step + 1);
+      } else {
+        setShowReview(true);
+      }
+    }
+  };
+
+  const handleFinalSave = () => {
+    const structuredProfile: CampaignProfile = {
+      campaign_name: name,
+      product_service: product,
+      website: website || undefined,
+      use_cases: useCases,
+      problems_solved: problems,
+      differentiator: differentiator || undefined,
+      industries,
+      company_types: companyTypes,
+      geographies,
+      company_size: companySizes,
+      company_stage: companyStages,
+      revenue_range: revenueRanges,
+      exclusions,
+      primary_research_focus: primaryFocus,
+      secondary_research_focus: secondaryFocus,
+      primary_roles: primaryRoles,
+      secondary_roles: secondaryRoles,
+      contact_requirements: contactReqs,
+      sales_motion: salesMotion,
+      channels,
+      tone,
+      objective: goal,
+      sender_name: senderName,
+    };
+
+    const campaignRow = [
+      name || "New Campaign",
+      `${product} • ${useCases.slice(0, 2).join(", ")}`,
+      product || "Custom Solution",
+      companyTypes[0] || industries[0] || "Target Enterprise",
+      industries[0] || "Biotechnology",
+      geographies.join(", ") || "North America",
+      "0",
+      "Today",
+      "Active",
+    ];
+
+    onSave(campaignRow, structuredProfile);
+  };
+
+  const stepsList = [
+    { title: "What you sell", desc: "Offering & problems solved" },
+    { title: "Who you sell to", desc: "ICP & research focus" },
+    { title: "Who to contact", desc: "Roles & contact criteria" },
+    { title: "How to reach out", desc: "Sales motion & channel" },
+  ];
+
+  return (
+    <div className="page wizard-page">
+      <div className="back-link" onClick={() => setPage("campaigns")}>
+        <Icon name="arrow" /> Back to Campaigns
+      </div>
+
+      <PageHeader
+        title="Create Campaign"
+        subtitle="Define research context and buyer intent for OutreachLens account discovery."
+      />
+
+      <div className="wizard-layout">
+        {/* TOP PROGRESS STEPPER */}
+        <div className="wizard-stepper-header">
+          <div className="stepper-track">
+            {stepsList.map((s, idx) => {
+              const isActive = !showReview && step === idx;
+              const isCompleted = showReview || step > idx;
+              return (
+                <div key={s.title} style={{ display: "contents" }}>
+                  <button
+                    type="button"
+                    className={`stepper-step ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}
+                    onClick={() => {
+                      if (showReview) {
+                        setShowReview(false);
+                        setStep(idx);
+                      } else if (idx <= step || validateStep(step)) {
+                        setStep(idx);
+                      }
+                    }}
+                  >
+                    <span className="stepper-num">
+                      {isCompleted ? <Icon name="check" size={14} /> : idx + 1}
+                    </span>
+                    <div className="stepper-labels">
+                      <span className="stepper-step-title">{s.title}</span>
+                      <span className="stepper-step-desc">{s.desc}</span>
+                    </div>
+                  </button>
+                  {idx < stepsList.length - 1 && (
+                    <div className={`stepper-divider ${step > idx || showReview ? "completed" : ""}`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* MAIN CARD CONTAINER */}
+        <Card className="wizard-card">
+          {/* ========================================================= */}
+          {/* STEP 1: WHAT YOU SELL */}
+          {/* ========================================================= */}
+          {!showReview && step === 0 && (
+            <div className="form-stack">
+              <div className="wizard-top">
+                <div>
+                  <span className="step-pill">Step 1 of 4 • Offering & Solutions</span>
+                  <h2>What you sell</h2>
+                  <p>Define the offering and the business problems it solves.</p>
+                </div>
+                <span className="autosave"><Icon name="check" size={13} /> Draft active</span>
+              </div>
+
+              <div className="form-grid">
+                <Field
+                  label="Campaign Name *"
+                  placeholder="e.g. North America Oncology ADC Growth 2026"
+                  value={name}
+                  onChange={(v) => { setName(v); if (errors.name) setErrors({ ...errors, name: "" }); }}
+                  error={errors.name}
+                  hint="Required. Give this campaign a clear descriptive name."
+                />
+
+                <div className="field">
+                  <span className="field-label">Product / Service *</span>
+                  <div className="searchable-select-wrap">
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <input
+                        type="text"
+                        value={product}
+                        placeholder="Select or type offering name..."
+                        onChange={(e) => {
+                          setProduct(e.target.value);
+                          setIsProductDropdownOpen(true);
+                          if (errors.product) setErrors({ ...errors, product: "" });
+                        }}
+                        onFocus={() => setIsProductDropdownOpen(true)}
+                        style={{
+                          width: "100%",
+                          border: "1px solid var(--slate-300)",
+                          borderRadius: "9px",
+                          padding: "10px 12px",
+                          height: "42px",
+                          background: "white",
+                        }}
+                      />
+                      <Button
+                        variant="secondary"
+                        style={{ height: "42px", minWidth: "42px", padding: 0 }}
+                        onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+                      >
+                        <Icon name="chevron" size={15} />
+                      </Button>
+                    </div>
+
+                    {isProductDropdownOpen && (
+                      <div className="searchable-dropdown-list">
+                        <div style={{ padding: "4px 8px", fontSize: "10px", color: "var(--slate-400)", fontWeight: 700 }}>
+                          SUGGESTED OFFERINGS
+                        </div>
+                        {EXISTING_PRODUCTS.map((prod) => (
+                          <button
+                            key={prod}
+                            type="button"
+                            className={`searchable-option ${product === prod ? "highlighted" : ""}`}
+                            onClick={() => {
+                              setProduct(prod);
+                              setIsProductDropdownOpen(false);
+                            }}
+                          >
+                            <span>{prod}</span>
+                            {product === prod && <Icon name="check" size={14} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {errors.product && <span className="field-error">{errors.product}</span>}
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <Field
+                  label="Product Website"
+                  placeholder="https://yourcompany.com/product"
+                  value={website}
+                  onChange={setWebsite}
+                  hint="Optional URL for product specifications or service overview."
+                />
+                <Field
+                  label="Key Differentiator"
+                  placeholder="What makes your solution different? (Max 120 chars)"
+                  value={differentiator}
+                  onChange={(v) => setDifferentiator(v.slice(0, 140))}
+                  hint={`${differentiator.length}/120 characters max`}
+                />
+              </div>
+
+              <div>
+                <div className="form-section-title">
+                  <span>Primary Use Cases * <small>(Select up to 3)</small></span>
+                  <Badge tone={useCases.length === 3 ? "warning" : "blue"}>{useCases.length}/3 selected</Badge>
+                </div>
+                <div className="chip-grid">
+                  {USE_CASE_OPTIONS.map((uc) => {
+                    const isSelected = useCases.includes(uc);
+                    const isDisabled = !isSelected && useCases.length >= 3;
+                    return (
+                      <div
+                        key={uc}
+                        className={`chip-item ${isSelected ? "selected" : ""} ${isDisabled ? "disabled" : ""}`}
+                        onClick={() => toggleItem(useCases, setUseCases, uc, 3)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{uc}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.useCases && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.useCases}</span>}
+              </div>
+
+              <div>
+                <div className="form-section-title">
+                  <span>Problems We Solve * <small>(Select up to 5)</small></span>
+                  <Badge tone={problems.length === 5 ? "warning" : "blue"}>{problems.length}/5 selected</Badge>
+                </div>
+                <div className="chip-grid">
+                  {PROBLEM_OPTIONS.map((prob) => {
+                    const isSelected = problems.includes(prob);
+                    const isDisabled = !isSelected && problems.length >= 5;
+                    return (
+                      <div
+                        key={prob}
+                        className={`chip-item ${isSelected ? "selected" : ""} ${isDisabled ? "disabled" : ""}`}
+                        onClick={() => toggleItem(problems, setProblems, prob, 5)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{prob}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.problems && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.problems}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* STEP 2: WHO YOU SELL TO & RESEARCH FOCUS */}
+          {/* ========================================================= */}
+          {!showReview && step === 1 && (
+            <div className="form-stack">
+              <div className="wizard-top">
+                <div>
+                  <span className="step-pill">Step 2 of 4 • ICP & Research Intelligence</span>
+                  <h2>Who you sell to</h2>
+                  <p>Define the companies and intelligence signals OutreachLens should prioritize.</p>
+                </div>
+                <span className="autosave"><Icon name="check" size={13} /> Draft active</span>
+              </div>
+
+              {/* Primary Industry */}
+              <div>
+                <div className="form-section-title">
+                  <span>Primary Industry *</span>
+                </div>
+                <div className="chip-grid">
+                  {INDUSTRY_OPTIONS.map((ind) => {
+                    const isSelected = industries.includes(ind);
+                    return (
+                      <div
+                        key={ind}
+                        className={`chip-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => toggleItem(industries, setIndustries, ind)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{ind}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.industries && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.industries}</span>}
+              </div>
+
+              {/* Company Type */}
+              <div>
+                <div className="form-section-title">
+                  <span>Company Type *</span>
+                </div>
+                <div className="chip-grid">
+                  {COMPANY_TYPE_OPTIONS.map((ct) => {
+                    const isSelected = companyTypes.includes(ct);
+                    return (
+                      <div
+                        key={ct}
+                        className={`chip-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => toggleItem(companyTypes, setCompanyTypes, ct)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{ct}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.companyTypes && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.companyTypes}</span>}
+              </div>
+
+              {/* Geography */}
+              <div>
+                <div className="form-section-title">
+                  <span>Geography *</span>
+                </div>
+                <div className="chip-grid">
+                  {GEOGRAPHY_OPTIONS.map((geo) => {
+                    const isSelected = geographies.includes(geo);
+                    return (
+                      <div
+                        key={geo}
+                        className={`chip-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => toggleItem(geographies, setGeographies, geo)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{geo}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.geographies && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.geographies}</span>}
+              </div>
+
+              {/* Company Size */}
+              <div>
+                <div className="form-section-title">
+                  <span>Company Size (Employees) *</span>
+                </div>
+                <div className="chip-grid">
+                  {COMPANY_SIZE_OPTIONS.map((size) => {
+                    const isSelected = companySizes.includes(size);
+                    return (
+                      <div
+                        key={size}
+                        className={`chip-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => toggleItem(companySizes, setCompanySizes, size)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{size}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.companySizes && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.companySizes}</span>}
+              </div>
+
+              <div className="form-grid">
+                {/* Company Stage */}
+                <div>
+                  <div className="form-section-title">
+                    <span>Company Stage <small>(Optional)</small></span>
+                  </div>
+                  <div className="chip-grid">
+                    {COMPANY_STAGE_OPTIONS.map((stage) => {
+                      const isSelected = companyStages.includes(stage);
+                      return (
+                        <div
+                          key={stage}
+                          className={`chip-item ${isSelected ? "selected" : ""}`}
+                          onClick={() => toggleItem(companyStages, setCompanyStages, stage)}
+                        >
+                          {isSelected && <Icon name="check" size={14} />}
+                          <span>{stage}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Revenue Range */}
+                <div>
+                  <div className="form-section-title">
+                    <span>Revenue Range <small>(Optional)</small></span>
+                  </div>
+                  <div className="chip-grid">
+                    {REVENUE_OPTIONS.map((rev) => {
+                      const isSelected = revenueRanges.includes(rev);
+                      return (
+                        <div
+                          key={rev}
+                          className={`chip-item ${isSelected ? "selected" : ""}`}
+                          onClick={() => toggleItem(revenueRanges, setRevenueRanges, rev)}
+                        >
+                          {isSelected && <Icon name="check" size={14} />}
+                          <span>{rev}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Exclusions / Disqualifiers */}
+              <div>
+                <div className="form-section-title">
+                  <span>Exclusions / Disqualifiers <small>(Optional)</small></span>
+                  {!showCustomExclusion && (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      style={{ fontSize: "11px" }}
+                      onClick={() => setShowCustomExclusion(true)}
+                    >
+                      + Add custom exclusion
+                    </button>
+                  )}
+                </div>
+                <div className="chip-grid">
+                  {EXCLUSION_OPTIONS.map((ex) => {
+                    const isSelected = exclusions.includes(ex);
+                    return (
+                      <div
+                        key={ex}
+                        className={`chip-item ${isSelected ? "selected" : ""}`}
+                        style={{ borderStyle: isSelected ? "solid" : "dashed" }}
+                        onClick={() => toggleItem(exclusions, setExclusions, ex)}
+                      >
+                        {isSelected ? <Icon name="close" size={13} /> : <Icon name="plus" size={13} />}
+                        <span>{ex}</span>
+                      </div>
+                    );
+                  })}
+                  {exclusions
+                    .filter((x) => !EXCLUSION_OPTIONS.includes(x))
+                    .map((customEx) => (
+                      <div
+                        key={customEx}
+                        className="chip-item selected"
+                        onClick={() => setExclusions(exclusions.filter((x) => x !== customEx))}
+                      >
+                        <Icon name="close" size={13} />
+                        <span>{customEx}</span>
+                      </div>
+                    ))}
+                </div>
+
+                {showCustomExclusion && (
+                  <div style={{ display: "flex", gap: "8px", marginTop: "10px", maxWidth: "450px" }}>
+                    <input
+                      type="text"
+                      placeholder="e.g. Companies under bankruptcy review..."
+                      value={customExclusionInput}
+                      onChange={(e) => setCustomExclusionInput(e.target.value)}
+                      style={{
+                        flex: 1,
+                        border: "1px solid var(--slate-300)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Button
+                      variant="primary"
+                      style={{ minHeight: "34px", padding: "0 12px", fontSize: "11px" }}
+                      onClick={() => {
+                        if (customExclusionInput.trim()) {
+                          setExclusions([...exclusions, customExclusionInput.trim()]);
+                          setCustomExclusionInput("");
+                          setShowCustomExclusion(false);
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      style={{ minHeight: "34px", padding: "0 8px", fontSize: "11px" }}
+                      onClick={() => setShowCustomExclusion(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* RESEARCH FOCUS SECTION */}
+              <div style={{ borderTop: "1px solid var(--slate-100)", paddingTop: "16px", marginTop: "6px" }}>
+                <div className="form-section-title">
+                  <div>
+                    <span style={{ fontSize: "14px", color: "var(--navy-950)" }}>Research Focus</span>
+                    <p style={{ margin: "2px 0 0", color: "var(--slate-500)", fontSize: "11px", fontWeight: 400 }}>
+                      Choose the signals OutreachLens should prioritize when evaluating accounts (up to 6 total). Mark as <strong>Primary</strong> or <strong>Secondary</strong> priority.
+                    </p>
+                  </div>
+                  <Badge tone={primaryFocus.length + secondaryFocus.length >= 6 ? "warning" : "blue"}>
+                    {primaryFocus.length + secondaryFocus.length}/6 selected
+                  </Badge>
+                </div>
+
+                <div className="research-card-grid" style={{ marginTop: "12px" }}>
+                  {RESEARCH_FOCUS_OPTIONS.map((item) => {
+                    const isPrimary = primaryFocus.includes(item.id);
+                    const isSecondary = secondaryFocus.includes(item.id);
+                    const isSelected = isPrimary || isSecondary;
+                    const totalSelected = primaryFocus.length + secondaryFocus.length;
+                    const isAtMax = totalSelected >= 6 && !isSelected;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`research-signal-card ${isSelected ? "is-selected" : ""} ${isPrimary ? "is-primary" : ""}`}
+                      >
+                        <div className="signal-card-header">
+                          <div className="signal-title-wrap">
+                            <strong>{item.label}</strong>
+                            <p>{item.desc}</p>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
+                          <div className="priority-toggle-group">
+                            <button
+                              type="button"
+                              className={`priority-toggle-btn ${isPrimary ? "active-primary" : ""}`}
+                              disabled={isAtMax && !isPrimary}
+                              onClick={() => setResearchSignal(item.id, isPrimary ? "none" : "primary")}
+                              title="Mark as primary research priority"
+                            >
+                              Primary
+                            </button>
+                            <button
+                              type="button"
+                              className={`priority-toggle-btn ${isSecondary ? "active-secondary" : ""}`}
+                              disabled={isAtMax && !isSecondary}
+                              onClick={() => setResearchSignal(item.id, isSecondary ? "none" : "secondary")}
+                              title="Mark as secondary research priority"
+                            >
+                              Secondary
+                            </button>
+                            {isSelected && (
+                              <button
+                                type="button"
+                                className="priority-toggle-btn"
+                                onClick={() => setResearchSignal(item.id, "none")}
+                                style={{ color: "var(--slate-400)", borderLeft: "1px solid var(--slate-100)" }}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+
+                          {isPrimary && <Badge tone="orange">Primary Focus</Badge>}
+                          {isSecondary && <Badge tone="blue">Secondary</Badge>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.researchFocus && <span className="field-error" style={{ display: "block", marginTop: "6px" }}>{errors.researchFocus}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* STEP 3: WHO TO CONTACT */}
+          {/* ========================================================= */}
+          {!showReview && step === 2 && (
+            <div className="form-stack">
+              <div className="wizard-top">
+                <div>
+                  <span className="step-pill">Step 3 of 4 • Stakeholders & Committee</span>
+                  <h2>Who to contact</h2>
+                  <p>Choose the people and decision-makers most relevant to your sales opportunity.</p>
+                </div>
+                <span className="autosave"><Icon name="check" size={13} /> Draft active</span>
+              </div>
+
+              {/* Primary Contacts */}
+              <div>
+                <div className="form-section-title">
+                  <span>Primary Contacts * <small>(Select up to 6 key decision-maker roles)</small></span>
+                  <Badge tone={primaryRoles.length === 6 ? "warning" : "blue"}>{primaryRoles.length}/6 selected</Badge>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px", marginTop: "10px" }}>
+                  {ROLE_CATEGORIES.map((cat) => (
+                    <div key={cat.category} className="role-group-box">
+                      <div className="role-group-header">
+                        <span>{cat.category}</span>
+                      </div>
+                      <div className="chip-grid">
+                        {cat.roles.map((r) => {
+                          const isSelected = primaryRoles.includes(r);
+                          const isDisabled = !isSelected && primaryRoles.length >= 6;
+                          return (
+                            <div
+                              key={r}
+                              className={`chip-item ${isSelected ? "selected" : ""} ${isDisabled ? "disabled" : ""}`}
+                              onClick={() => toggleItem(primaryRoles, setPrimaryRoles, r, 6)}
+                            >
+                              {isSelected && <Icon name="check" size={14} />}
+                              <span>{r}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {errors.primaryRoles && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.primaryRoles}</span>}
+              </div>
+
+              {/* Secondary Contacts */}
+              <div style={{ marginTop: "4px" }}>
+                <div className="form-section-title">
+                  <span>Secondary / Influencer Contacts <small>(Optional, select up to 6)</small></span>
+                  <Badge tone={secondaryRoles.length === 6 ? "warning" : "neutral"}>{secondaryRoles.length}/6 selected</Badge>
+                </div>
+                <div className="chip-grid" style={{ marginTop: "8px" }}>
+                  {SECONDARY_ROLE_OPTIONS.map((sr) => {
+                    const isSelected = secondaryRoles.includes(sr);
+                    const isDisabled = !isSelected && secondaryRoles.length >= 6;
+                    return (
+                      <div
+                        key={sr}
+                        className={`chip-item ${isSelected ? "selected" : ""} ${isDisabled ? "disabled" : ""}`}
+                        onClick={() => toggleItem(secondaryRoles, setSecondaryRoles, sr, 6)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{sr}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Contact Requirements */}
+              <div style={{ borderTop: "1px solid var(--slate-100)", paddingTop: "16px", marginTop: "8px" }}>
+                <div className="form-section-title">
+                  <span>Contact Quality & Verification Requirements</span>
+                  <small>Pre-selected best practices for account intelligence discovery</small>
+                </div>
+                <div className="checkbox-card-grid" style={{ marginTop: "10px" }}>
+                  <label className={`checkbox-card ${contactReqs.currentlyInRole ? "checked" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={contactReqs.currentlyInRole}
+                      onChange={(e) => setContactReqs({ ...contactReqs, currentlyInRole: e.target.checked })}
+                    />
+                    <span>Currently active in confirmed role</span>
+                  </label>
+
+                  <label className={`checkbox-card ${contactReqs.publiclyVerifiable ? "checked" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={contactReqs.publiclyVerifiable}
+                      onChange={(e) => setContactReqs({ ...contactReqs, publiclyVerifiable: e.target.checked })}
+                    />
+                    <span>Publicly verifiable with external record</span>
+                  </label>
+
+                  <label className={`checkbox-card ${contactReqs.relevantToOpportunity ? "checked" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={contactReqs.relevantToOpportunity}
+                      onChange={(e) => setContactReqs({ ...contactReqs, relevantToOpportunity: e.target.checked })}
+                    />
+                    <span>Relevant to selected opportunity & use case</span>
+                  </label>
+
+                  <label className={`checkbox-card ${contactReqs.recentActivityPreferred ? "checked" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={contactReqs.recentActivityPreferred}
+                      onChange={(e) => setContactReqs({ ...contactReqs, recentActivityPreferred: e.target.checked })}
+                    />
+                    <span>Prefer contacts with recent relevant activity</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* STEP 4: HOW TO REACH OUT */}
+          {/* ========================================================= */}
+          {!showReview && step === 3 && (
+            <div className="form-stack">
+              <div className="wizard-top">
+                <div>
+                  <span className="step-pill">Step 4 of 4 • Sales Motion & Approach</span>
+                  <h2>How to reach out</h2>
+                  <p>Set the preferred sales approach, tone, and delivery channel.</p>
+                </div>
+                <span className="autosave"><Icon name="check" size={13} /> Draft active</span>
+              </div>
+
+              <div className="form-grid">
+                <SelectField
+                  label="Sales Motion *"
+                  value={salesMotion}
+                  onChange={(v) => setSalesMotion(v)}
+                >
+                  <option value="Enterprise / Consultative">Enterprise / Consultative</option>
+                  <option value="Consultative">Consultative</option>
+                  <option value="Transactional">Transactional</option>
+                  <option value="Account-Based">Account-Based (ABM)</option>
+                  <option value="Relationship-led">Relationship-led</option>
+                </SelectField>
+
+                <SelectField
+                  label="Email Tone *"
+                  value={tone}
+                  onChange={(v) => setTone(v)}
+                >
+                  <option value="Consultative">Consultative (Peer-to-peer advisor)</option>
+                  <option value="Executive">Executive (Concise, strategic ROI)</option>
+                  <option value="Technical">Technical (Evidence & specification focused)</option>
+                  <option value="Direct">Direct (Action-oriented, brief)</option>
+                  <option value="Professional">Professional (Formal enterprise tone)</option>
+                </SelectField>
+              </div>
+
+              <div className="form-grid">
+                <SelectField
+                  label="Outreach Goal *"
+                  value={goal}
+                  onChange={(v) => setGoal(v)}
+                >
+                  <option value="Book Discovery Meeting">Book Discovery Meeting</option>
+                  <option value="Start Conversation">Start Conversation</option>
+                  <option value="Qualify Opportunity">Qualify Opportunity</option>
+                  <option value="Introduce Solution">Introduce Solution</option>
+                  <option value="Expand Existing Account">Expand Existing Account</option>
+                </SelectField>
+
+                <Field
+                  label="Sender Name *"
+                  placeholder="e.g. Pavan Dantuluri"
+                  value={senderName}
+                  onChange={(v) => { setSenderName(v); if (errors.senderName) setErrors({ ...errors, senderName: "" }); }}
+                  error={errors.senderName}
+                  hint="Used in signature and outbound communication personalization."
+                />
+              </div>
+
+              <div>
+                <div className="form-section-title">
+                  <span>Primary Channel * <small>(Select one or multiple)</small></span>
+                </div>
+                <div className="chip-grid">
+                  {["Email", "LinkedIn", "Phone", "Multi-channel"].map((ch) => {
+                    const isSelected = channels.includes(ch);
+                    return (
+                      <div
+                        key={ch}
+                        className={`chip-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => toggleItem(channels, setChannels, ch)}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                        <span>{ch}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.channels && <span className="field-error" style={{ display: "block", marginTop: "4px" }}>{errors.channels}</span>}
+              </div>
+
+              <div className="info-box" style={{ marginTop: "10px" }}>
+                <Icon name="spark" size={18} />
+                <p>
+                  <strong>Automated Outreach Synthesis</strong>
+                  OutreachLens will synthesize value propositions, research focus signals, and contact intelligence into tailored messaging automatically during account execution.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* STEP 5: COMPACT REVIEW STATE */}
+          {/* ========================================================= */}
+          {showReview && (
+            <div className="form-stack">
+              <div className="wizard-top">
+                <div>
+                  <span className="step-pill">Final Review • Ready to Create</span>
+                  <h2>Review Campaign Configuration</h2>
+                  <p>Confirm your business intent before saving the campaign profile.</p>
+                </div>
+                <Badge tone="success"><Icon name="check" size={13} /> Complete & Verified</Badge>
+              </div>
+
+              <div className="review-summary-grid">
+                {/* Box 1: Selling */}
+                <div className="review-box">
+                  <div className="review-box-header">
+                    <strong>1. What You Sell</strong>
+                    <button type="button" onClick={() => { setShowReview(false); setStep(0); }}>Edit</button>
+                  </div>
+                  <div className="review-row">
+                    <span>Campaign</span>
+                    <div><strong>{name}</strong></div>
+                  </div>
+                  <div className="review-row">
+                    <span>Product / Offering</span>
+                    <div>{product}</div>
+                  </div>
+                  <div className="review-row">
+                    <span>Primary Use Cases</span>
+                    <div className="tag-pill-list">
+                      {useCases.map((u) => <span key={u} className="tag-pill">{u}</span>)}
+                    </div>
+                  </div>
+                  <div className="review-row">
+                    <span>Problems Solved</span>
+                    <div className="tag-pill-list">
+                      {problems.map((p) => <span key={p} className="tag-pill">{p}</span>)}
+                    </div>
+                  </div>
+                  {differentiator && (
+                    <div className="review-row">
+                      <span>Differentiator</span>
+                      <div style={{ color: "var(--slate-600)", fontSize: "11px" }}>{differentiator}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Box 2: ICP */}
+                <div className="review-box">
+                  <div className="review-box-header">
+                    <strong>2. Who You Sell To</strong>
+                    <button type="button" onClick={() => { setShowReview(false); setStep(1); }}>Edit</button>
+                  </div>
+                  <div className="review-row">
+                    <span>Industry & Company Types</span>
+                    <div className="tag-pill-list">
+                      {industries.map((ind) => <span key={ind} className="tag-pill">{ind}</span>)}
+                      {companyTypes.map((ct) => <span key={ct} className="tag-pill">{ct}</span>)}
+                    </div>
+                  </div>
+                  <div className="review-row">
+                    <span>Geography</span>
+                    <div className="tag-pill-list">
+                      {geographies.map((g) => <span key={g} className="tag-pill">{g}</span>)}
+                    </div>
+                  </div>
+                  <div className="review-row">
+                    <span>Company Size & Stage</span>
+                    <div className="tag-pill-list">
+                      {companySizes.map((s) => <span key={s} className="tag-pill">{s} emp</span>)}
+                      {companyStages.map((st) => <span key={st} className="tag-pill">{st}</span>)}
+                    </div>
+                  </div>
+                  {exclusions.length > 0 && (
+                    <div className="review-row">
+                      <span>Disqualifiers</span>
+                      <div className="tag-pill-list">
+                        {exclusions.map((ex) => <span key={ex} className="tag-pill" style={{ background: "var(--red-50)", color: "#b91c1c" }}>✕ {ex}</span>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Box 3: Research Focus */}
+                <div className="review-box">
+                  <div className="review-box-header">
+                    <strong>3. Research Focus Signals</strong>
+                    <button type="button" onClick={() => { setShowReview(false); setStep(1); }}>Edit</button>
+                  </div>
+                  <div className="review-row">
+                    <span>Primary Focus</span>
+                    <div className="tag-pill-list">
+                      {primaryFocus.map((pf) => <span key={pf} className="tag-pill primary"><Icon name="spark" size={11} /> {pf}</span>)}
+                    </div>
+                  </div>
+                  <div className="review-row">
+                    <span>Secondary Focus</span>
+                    <div className="tag-pill-list">
+                      {secondaryFocus.map((sf) => <span key={sf} className="tag-pill secondary">{sf}</span>)}
+                    </div>
+                  </div>
+                  <div className="review-row" style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid var(--slate-100)" }}>
+                    <span>Inferred Research Strategy</span>
+                    <div style={{ fontSize: "11px", color: "var(--slate-500)", lineHeight: 1.4 }}>
+                      Prioritizing accounts where {primaryFocus.join(" and ")} indicate active business need for {product}.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Box 4: Contacts & Outreach */}
+                <div className="review-box">
+                  <div className="review-box-header">
+                    <strong>4. Contacts & Outreach</strong>
+                    <button type="button" onClick={() => { setShowReview(false); setStep(2); }}>Edit</button>
+                  </div>
+                  <div className="review-row">
+                    <span>Target Roles</span>
+                    <div className="tag-pill-list">
+                      {primaryRoles.map((pr) => <span key={pr} className="tag-pill primary">{pr}</span>)}
+                      {secondaryRoles.map((sr) => <span key={sr} className="tag-pill">{sr}</span>)}
+                    </div>
+                  </div>
+                  <div className="review-row">
+                    <span>Sales Motion & Tone</span>
+                    <div>{salesMotion} • {tone} Tone</div>
+                  </div>
+                  <div className="review-row">
+                    <span>Channels & Objective</span>
+                    <div>{channels.join(", ")} → <strong>{goal}</strong></div>
+                  </div>
+                  <div className="review-row">
+                    <span>Sender Name</span>
+                    <div>{senderName}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FOOTER ACTIONS */}
+          <div className="wizard-actions">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (showReview) {
+                  setShowReview(false);
+                  setStep(3);
+                } else if (step === 0) {
+                  setPage("campaigns");
+                } else {
+                  setStep(step - 1);
+                }
+              }}
+            >
+              {step === 0 && !showReview ? "Cancel" : "← Back"}
+            </Button>
+
+            <span />
+
+            {!showReview ? (
+              <Button onClick={handleNext}>
+                {step === 3 ? "Review Campaign" : "Next →"}
+              </Button>
+            ) : (
+              <Button onClick={handleFinalSave}>
+                <Icon name="check" size={16} /> Create Campaign
+              </Button>
+            )}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
-function Accounts({ setPage }: { setPage: (p: Page) => void }) {
-  const rows = [
-    ["Oncology Account Discovery", "US Oncology Hospital Expansion", "50", "50", "18", "21", "11", "Oct 04, 2026", "Completed"],
-    ["HER2 Provider Research", "HER2 Market Opportunity", "100", "84", "24", "41", "19", "Oct 02, 2026", "Partial Results"],
-    ["Specialty Pharmacy Scan", "Specialty Pharmacy Expansion", "75", "—", "—", "—", "—", "Oct 01, 2026", "Running"],
-    ["Ontario IDN Discovery", "Canadian Market Expansion", "40", "0", "0", "0", "0", "Sep 28, 2026", "Failed"],
+
+function Accounts({ setPage, activeCampaign = "North America Oncology ADC Growth Campaign 2026" }: { setPage: (p: Page) => void; activeCampaign?: string }) {
+  const [tab, setTab] = useState<"find" | "researched" | "favourites">("researched");
+  const [search, setSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("All Priorities");
+  const [stageFilter, setStageFilter] = useState("All Stages");
+  const [selectedAll, setSelectedAll] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  const accountsList = [
+    {
+      name: "Sutro Biopharma",
+      category: "Biotechnology / Oncology Drug Development",
+      domain: "sutrobio.com",
+      campaign: "North America Oncology ADC Growth Campaign 2026",
+      score: 78,
+      priority: "HIGH PRIORITY",
+      stage: "New (Discovered)",
+      researched: "Oct 6, 2026",
+      location: "South San Francisco, CA",
+      badgeTone: "success"
+    },
+    {
+      name: "Adcendo ApS",
+      category: "Biotechnology / TF ADC Oncology",
+      domain: "adcendo.com",
+      campaign: "North America Oncology ADC Growth Campaign 2026",
+      score: 84,
+      priority: "HIGH PRIORITY",
+      stage: "In Progress",
+      researched: "Oct 5, 2026",
+      location: "Copenhagen / Boston",
+      badgeTone: "success"
+    },
+    {
+      name: "Mersana Therapeutics",
+      category: "Biopharmaceuticals / ADC Platform",
+      domain: "mersana.com",
+      campaign: "North America Oncology ADC Growth Campaign 2026",
+      score: 71,
+      priority: "MEDIUM PRIORITY",
+      stage: "New (Discovered)",
+      researched: "Oct 4, 2026",
+      location: "Cambridge, MA",
+      badgeTone: "warning"
+    },
+    {
+      name: "ImmunoGen (AbbVie)",
+      category: "Commercial Oncology / Solid Tumors",
+      domain: "immunogen.com",
+      campaign: "North America Oncology ADC Growth Campaign 2026",
+      score: 64,
+      priority: "MEDIUM PRIORITY",
+      stage: "Contacted",
+      researched: "Oct 2, 2026",
+      location: "Waltham, MA",
+      badgeTone: "warning"
+    },
+    {
+      name: "Tubulis GmbH",
+      category: "Preclinical ADC Platform & Linkers",
+      domain: "tubulis.com",
+      campaign: "North America Oncology ADC Growth Campaign 2026",
+      score: 52,
+      priority: "LOW PRIORITY",
+      stage: "New (Discovered)",
+      researched: "Sep 28, 2026",
+      location: "Munich, Germany",
+      badgeTone: "neutral"
+    }
   ];
-  return <div className="page"><PageHeader title="Account Intelligence" subtitle="Discover, research and prioritize high-value pharmaceutical accounts."><Button icon="plus" onClick={() => setPage("run-research")}>Add New</Button></PageHeader><div className="module-summary"><div className="module-icon"><Icon name="spark" /></div><div><strong>Intelligence Engine</strong><p>Discover relevant accounts, validate product fit, detect commercial signals and build evidence-backed intelligence reports.</p></div><span><Icon name="shield" /> Evidence-backed</span></div><div className="section-heading"><div><h2>Previous Research</h2><p>Research runs preserve the account discovery and analysis history.</p></div></div><FilterBar placeholder="Search research runs..." /><Card className="table-card"><div className="table-scroll"><table><thead><tr><th>Research run</th><th>Campaign</th><th>Requested</th><th>Found</th><th>High</th><th>Medium</th><th>Low</th><th>Created</th><th>Status</th><th>Action</th></tr></thead><tbody>{rows.map((r) => <tr key={r[0]}><td><button className="table-link" onClick={() => setPage("results")}>{r[0]}</button></td><td>{r[1]}</td><td>{r[2]}</td><td><strong>{r[3]}</strong></td><td className="high-text">{r[4]}</td><td className="amber-text">{r[5]}</td><td>{r[6]}</td><td>{r[7]}</td><td><Badge tone={r[8] === "Completed" ? "success" : r[8] === "Running" ? "blue" : r[8] === "Failed" ? "danger" : "warning"}>{r[8] === "Running" && <span className="mini-spinner" />}{r[8]}</Badge></td><td><Button variant="secondary" onClick={() => setPage(r[8] === "Running" ? "running" : "results")}>{r[8] === "Running" ? "View Progress" : "View Results"}</Button></td></tr>)}</tbody></table></div><div className="table-footer"><span>Showing 4 of 28 research runs</span><div><Button variant="secondary">Previous</Button><Button variant="secondary">Next</Button></div></div></Card></div>;
+
+  const filteredAccounts = accountsList.filter((acc) => {
+    const matchesSearch = search === "" || 
+      acc.name.toLowerCase().includes(search.toLowerCase()) || 
+      acc.domain.toLowerCase().includes(search.toLowerCase()) ||
+      acc.category.toLowerCase().includes(search.toLowerCase());
+    const matchesPriority = priorityFilter === "All Priorities" || acc.priority.toLowerCase().includes(priorityFilter.toLowerCase());
+    const matchesStage = stageFilter === "All Stages" || acc.stage.toLowerCase().includes(stageFilter.toLowerCase());
+    return matchesSearch && matchesPriority && matchesStage;
+  });
+
+  const toggleSelect = (name: string) => {
+    if (selectedRows.includes(name)) {
+      setSelectedRows(selectedRows.filter(x => x !== name));
+    } else {
+      setSelectedRows([...selectedRows, name]);
+    }
+  };
+
+  return (
+    <div className="lens-page-body" style={{ padding: "20px 28px", maxWidth: "1600px", margin: "0 auto" }}>
+      {/* TOP HEADER */}
+      <div className="lens-page-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "16px" }}>
+        <div>
+          <h1 className="lens-page-title" style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", margin: "0 0 3px", letterSpacing: "-0.02em" }}>
+            Accounts
+          </h1>
+          <p className="lens-page-subtitle" style={{ fontSize: "12.5px", color: "#64748b", margin: 0 }}>
+            Discover, research, and manage high-priority accounts across your active campaigns and sales pipeline.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <Button 
+            variant="secondary" 
+            style={{ borderRadius: "8px", fontWeight: "600", fontSize: "12.5px", height: "36px", padding: "0 14px" }}
+            onClick={() => alert("Import Companies file (CSV/XLSX)")}
+          >
+            <Icon name="upload" size={14} /> Import Companies
+          </Button>
+          <Button 
+            variant="primary" 
+            style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)", color: "white", borderRadius: "8px", fontWeight: "600", fontSize: "12.5px", height: "36px", padding: "0 16px", boxShadow: "0 3px 10px rgba(79, 70, 229, 0.3)" }}
+            onClick={() => setPage("run-research")}
+          >
+            <Icon name="search" size={14} /> Quick Research
+          </Button>
+        </div>
+      </div>
+
+      {/* TABS: Find / Researched (5) / Favourites (0) */}
+      <div className="lens-tab-bar" style={{ display: "flex", gap: "24px", borderBottom: "1px solid #e2e8f0", marginBottom: "16px" }}>
+        <button 
+          className={`lens-tab-btn ${tab === "find" ? "active" : ""}`}
+          onClick={() => setTab("find")}
+          style={{ padding: "10px 4px 12px", background: "none", border: "none", borderBottom: tab === "find" ? "2px solid #4f46e5" : "2px solid transparent", color: tab === "find" ? "#4f46e5" : "#64748b", fontWeight: tab === "find" ? "700" : "500", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13.5px" }}
+        >
+          <span style={{ fontSize: "14px" }}>🎯</span> Discover New
+        </button>
+        <button 
+          className={`lens-tab-btn ${tab === "researched" ? "active" : ""}`}
+          onClick={() => setTab("researched")}
+          style={{ padding: "10px 4px 12px", background: "none", border: "none", borderBottom: tab === "researched" ? "2px solid #4f46e5" : "2px solid transparent", color: tab === "researched" ? "#4f46e5" : "#64748b", fontWeight: tab === "researched" ? "700" : "500", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13.5px" }}
+        >
+          <span style={{ fontSize: "14px" }}>📊</span> Researched Accounts <span style={{ background: "#eef2ff", color: "#4f46e5", padding: "1px 7px", borderRadius: "10px", fontSize: "11.5px", fontWeight: "750" }}>{accountsList.length}</span>
+        </button>
+        <button 
+          className={`lens-tab-btn ${tab === "favourites" ? "active" : ""}`}
+          onClick={() => setTab("favourites")}
+          style={{ padding: "10px 4px 12px", background: "none", border: "none", borderBottom: tab === "favourites" ? "2px solid #4f46e5" : "2px solid transparent", color: tab === "favourites" ? "#4f46e5" : "#64748b", fontWeight: tab === "favourites" ? "700" : "500", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13.5px" }}
+        >
+          <span>★</span> Favourites <span style={{ color: "#94a3b8", fontSize: "11.5px" }}>0</span>
+        </button>
+      </div>
+
+      {/* FILTER CONTROLS BAR */}
+      <div className="lens-filter-row" style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "16px", flexWrap: "wrap" }}>
+        <div style={{ position: "relative", flex: 1, minWidth: "260px" }}>
+          <Icon name="search" size={14} style={{ position: "absolute", left: "12px", top: "12px", color: "#94a3b8" }} />
+          <input 
+            type="text" 
+            placeholder="Search by company name, domain, or modality..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ width: "100%", height: "38px", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "0 12px 0 34px", fontSize: "12.5px", outline: "none", color: "#0f172a" }}
+          />
+        </div>
+
+        <div style={{ minWidth: "200px" }}>
+          <select 
+            value={activeCampaign} 
+            disabled 
+            style={{ width: "100%", height: "38px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "0 10px", fontSize: "12px", color: "#475569" }}
+          >
+            <option>{activeCampaign.slice(0, 28)}...</option>
+          </select>
+        </div>
+
+        <div style={{ minWidth: "140px" }}>
+          <select 
+            value={priorityFilter} 
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            style={{ width: "100%", height: "38px", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "0 10px", fontSize: "12px", color: "#0f172a", cursor: "pointer" }}
+          >
+            <option>All Priorities</option>
+            <option>High Priority</option>
+            <option>Medium Priority</option>
+            <option>Low Priority</option>
+          </select>
+        </div>
+
+        <div style={{ minWidth: "130px" }}>
+          <select 
+            value={stageFilter} 
+            onChange={(e) => setStageFilter(e.target.value)}
+            style={{ width: "100%", height: "38px", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "0 10px", fontSize: "12px", color: "#0f172a", cursor: "pointer" }}
+          >
+            <option>All Stages</option>
+            <option>New</option>
+            <option>In Progress</option>
+            <option>Contacted</option>
+          </select>
+        </div>
+
+        <button 
+          className="lens-reset-btn"
+          onClick={() => {
+            setSearch("");
+            setPriorityFilter("All Priorities");
+            setStageFilter("All Stages");
+          }}
+          style={{ height: "38px", padding: "0 14px", border: "1px solid #e2e8f0", background: "#ffffff", borderRadius: "8px", fontSize: "12px", fontWeight: "600", color: "#64748b", cursor: "pointer" }}
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* ACCOUNTS TABLE CARD */}
+      <Card className="lens-table-card" style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", overflow: "hidden", boxShadow: "0 2px 10px rgba(15, 23, 42, 0.03)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: "1px solid #f1f5f9", background: "#ffffff" }}>
+          <span style={{ fontSize: "12.5px", color: "#334155" }}>
+            Showing <strong>1–{filteredAccounts.length}</strong> of <strong>{filteredAccounts.length}</strong> accounts
+          </span>
+          <span style={{ color: "#4f46e5", fontSize: "12px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+            <Icon name="spark" size={13} /> Click any row to open Sales Decision Report
+          </span>
+        </div>
+
+        <div className="table-scroll" style={{ overflowX: "auto" }}>
+          <table className="lens-table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <thead>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                <th style={{ width: "40px", padding: "12px 16px" }}>
+                  <input 
+                    type="checkbox" 
+                    checked={selectedAll} 
+                    onChange={(e) => {
+                      setSelectedAll(e.target.checked);
+                      setSelectedRows(e.target.checked ? filteredAccounts.map(a => a.name) : []);
+                    }} 
+                  />
+                </th>
+                <th style={{ padding: "12px 16px", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>COMPANY</th>
+                <th style={{ padding: "12px 16px", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>DOMAIN</th>
+                <th style={{ padding: "12px 16px", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>CAMPAIGN</th>
+                <th style={{ padding: "12px 16px", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>OPPORTUNITY SCORE</th>
+                <th style={{ padding: "12px 16px", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>SALES PRIORITY</th>
+                <th style={{ padding: "12px 16px", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>STAGE</th>
+                <th style={{ padding: "12px 16px", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>RESEARCHED</th>
+                <th style={{ padding: "12px 16px", textAlign: "right", fontSize: "11px", fontWeight: "800", color: "#64748b", letterSpacing: "0.06em" }}>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAccounts.map((row) => (
+                <tr 
+                  key={row.name} 
+                  style={{ cursor: "pointer", borderBottom: "1px solid #f1f5f9", transition: "background 0.15s" }} 
+                  onClick={() => setPage("report")}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#fbfbfe")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <td style={{ padding: "14px 16px" }} onClick={(e) => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedRows.includes(row.name)} 
+                      onChange={() => toggleSelect(row.name)} 
+                    />
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%)", color: "white", fontSize: "13px", fontWeight: "800", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                        {row.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "750", color: "#0f172a", fontSize: "13.5px" }}>{row.name}</div>
+                        <div style={{ color: "#64748b", fontSize: "11.5px", marginTop: "1px" }}>{row.category} · <span style={{ color: "#94a3b8" }}>{row.location}</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <a 
+                      href={`https://${row.domain}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      style={{ color: "#4f46e5", fontSize: "12.5px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {row.domain} <span style={{ fontSize: "10px", color: "#818cf8" }}>↗</span>
+                    </a>
+                  </td>
+                  <td style={{ padding: "14px 16px", color: "#475569", fontSize: "12px", maxWidth: "220px" }}>
+                    {row.campaign.slice(0, 32)}...
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontWeight: "850", color: "#4f46e5", fontSize: "14px" }}>{row.score}</span>
+                      <small style={{ color: "#64748b", fontSize: "11px" }}>/ 100</small>
+                      <div style={{ width: "40px", height: "5px", background: "#e2e8f0", borderRadius: "3px", overflow: "hidden" }}>
+                        <div style={{ width: `${row.score}%`, height: "100%", background: row.score >= 75 ? "#4f46e5" : row.score >= 60 ? "#6366f1" : "#94a3b8" }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span 
+                      style={{ 
+                        fontSize: "10.5px", 
+                        fontWeight: "800", 
+                        padding: "3px 8px", 
+                        borderRadius: "6px",
+                        background: row.priority.includes("HIGH") ? "#ecfdf5" : row.priority.includes("MEDIUM") ? "#fffbeb" : "#f1f5f9",
+                        color: row.priority.includes("HIGH") ? "#047857" : row.priority.includes("MEDIUM") ? "#b45309" : "#475569",
+                        border: row.priority.includes("HIGH") ? "1px solid #a7f3d0" : row.priority.includes("MEDIUM") ? "1px solid #fde68a" : "1px solid #cbd5e1"
+                      }}
+                    >
+                      {row.priority}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px", color: "#334155", fontSize: "12px", fontWeight: "500" }}>{row.stage}</td>
+                  <td style={{ padding: "14px 16px", color: "#64748b", fontSize: "12px" }}>{row.researched}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "right" }}>
+                    <Button 
+                      variant="primary" 
+                      style={{ height: "30px", fontSize: "12px", padding: "0 14px", borderRadius: "6px", background: "#4f46e5", fontWeight: "600" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPage("report");
+                      }}
+                    >
+                      View Report →
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* BOTTOM ATTACHED PAGINATION BAR */}
+        <div className="lens-pagination-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderTop: "1px solid #f1f5f9", background: "#ffffff", fontSize: "12px", color: "#64748b" }}>
+          <div>
+            Showing <strong>1–{filteredAccounts.length}</strong> of <strong>{filteredAccounts.length}</strong> accounts
+          </div>
+          <div className="lens-pagination-controls" style={{ display: "flex", gap: "6px" }}>
+            <button className="lens-pagination-btn" disabled style={{ padding: "4px 10px", border: "1px solid #e2e8f0", background: "#ffffff", borderRadius: "6px", cursor: "not-allowed", opacity: 0.5 }}>
+              Previous
+            </button>
+            <button className="lens-pagination-btn active" style={{ padding: "4px 10px", border: "1px solid #4f46e5", background: "#4f46e5", color: "white", borderRadius: "6px", fontWeight: "700" }}>
+              1
+            </button>
+            <button className="lens-pagination-btn" disabled style={{ padding: "4px 10px", border: "1px solid #e2e8f0", background: "#ffffff", borderRadius: "6px", cursor: "not-allowed", opacity: 0.5 }}>
+              Next
+            </button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
 }
+
 
 function RunResearch({ setPage }: { setPage: (p: Page) => void }) {
   const [quantity, setQuantity] = useState("50");
@@ -426,8 +2208,8 @@ function PdfPreviewModal({ onClose, onDownload }: { onClose: () => void; onDownl
         <div className="pdf-modal-header">
           <div className="pdf-modal-title">
             <Icon name="briefcase" size={18} />
-            <strong>OutreachLens_Sutro_Biopharma_Intelligence_Report.pdf</strong>
-            <span>Preview Mode · 21 Sections</span>
+            <strong>OutreachLens_Sutro_Biopharma_Opportunity_Intelligence_Report.pdf</strong>
+            <span>Sales Decision Mode · 19 Sections</span>
           </div>
           <div className="pdf-modal-actions">
             <Button variant="secondary" icon="download" onClick={onDownload}>Download PDF / Print</Button>
@@ -437,117 +2219,132 @@ function PdfPreviewModal({ onClose, onDownload }: { onClose: () => void; onDownl
         <div className="pdf-modal-body">
           {/* Sheet 1: Executive Brief & Profile */}
           <div className="pdf-page-sheet">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #0f2b48", paddingBottom: "16px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #312e81", paddingBottom: "16px", marginBottom: "20px" }}>
               <div>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#ea580c", textTransform: "uppercase", letterSpacing: "0.1em" }}>OUTREACHLENS ACCOUNT INTELLIGENCE REPORT</span>
+                <span style={{ fontSize: "11px", fontWeight: "800", color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.1em" }}>OUTREACHLENS SALES DECISION & OPPORTUNITY REPORT</span>
                 <h1 style={{ margin: "4px 0 2px", fontSize: "24px" }}>{d.account} ({d.ticker})</h1>
-                <p style={{ margin: 0, color: "#64748b", fontSize: "12px" }}>{d.location} · Research date: {d.date}</p>
+                <p style={{ margin: 0, color: "#64748b", fontSize: "12px" }}>{d.location} · Researched: {d.date}</p>
               </div>
               <div style={{ textAlign: "right" }}>
                 <span style={{ background: "#ecfdf5", color: "#065f46", padding: "4px 10px", borderRadius: "20px", fontWeight: "700", fontSize: "12px", border: "1px solid #a7f3d0" }}>DECISION: {d.decision}</span>
-                <div style={{ marginTop: "6px", fontSize: "11px", color: "#64748b" }}>Opportunity Score: <strong>65/100 (Medium)</strong></div>
+                <div style={{ marginTop: "6px", fontSize: "11px", color: "#64748b" }}>Opportunity Score: <strong style={{ color: "#4f46e5", fontSize: "13px" }}>{d.opportunityScore}/100</strong> (Demand: High · Buying Intent: Unverified)</div>
               </div>
             </div>
 
-            <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "8px", padding: "10px 14px", fontSize: "11.5px", color: "#9a3412", marginBottom: "20px" }}>
-              <strong>DEMO RUN — ASSUMED SELLER: </strong>{d.demoNotice}
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "16px" }}>01. Company Snapshot</h2>
+            <p style={{ fontSize: "12px", color: "#334155", lineHeight: 1.6 }}>{d.companyOverview.summary}</p>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Field</th><th>Verified Account Reality</th></tr></thead>
+              <tbody>
+                <tr><td>Industry / Sector</td><td>{d.companyOverview.snapshot.industry}</td></tr>
+                <tr><td>Development Stage</td><td>{d.companyOverview.snapshot.companyStage}</td></tr>
+                <tr><td>Location & HQ</td><td>{d.companyOverview.snapshot.headquarters} [E06]</td></tr>
+                <tr><td>Employees & Model</td><td>{d.companyOverview.snapshot.employees} · 100% Externalized Manufacturing [E07][E08]</td></tr>
+                <tr><td>Financial Period Revenue</td><td>{d.companyOverview.snapshot.revenue} ({d.companyOverview.snapshot.revenuePeriod}) [E15]</td></tr>
+                <tr><td>Cash & Liquidity Runway</td><td>{d.financialData.cashPosition} ({d.financialData.cashPeriod}) — Runway into at least Q2 2028 [E01]</td></tr>
+              </tbody>
+            </table>
+
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>02. Executive Sales Brief</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", margin: "10px 0" }}>
+              <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
+                <strong style={{ fontSize: "11px", color: "#1e1b4b" }}>WHY THIS ACCOUNT?</strong>
+                <p style={{ fontSize: "11px", margin: "4px 0 0", color: "#475569" }}>{d.executiveBrief.whyThisAccount}</p>
+              </div>
+              <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
+                <strong style={{ fontSize: "11px", color: "#1e1b4b" }}>WHY CONTACT NOW?</strong>
+                <p style={{ fontSize: "11px", margin: "4px 0 0", color: "#475569" }}>{d.executiveBrief.whyContactNow}</p>
+              </div>
+              <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
+                <strong style={{ fontSize: "11px", color: "#1e1b4b" }}>WHO TO CONTACT?</strong>
+                <p style={{ fontSize: "11px", margin: "4px 0 0", color: "#475569" }}>{d.executiveBrief.whoToContact}</p>
+              </div>
+            </div>
+            <div style={{ background: "#eef2ff", border: "1px solid #c7d2fe", padding: "8px 12px", borderRadius: "6px", fontSize: "11.5px", color: "#312e81" }}>
+              <strong>Sales Takeaway: </strong>{d.executiveBrief.salesTakeaway}
+            </div>
+          </div>
+
+          {/* Sheet 2: Pipeline, Competitive & Commercial Opportunity */}
+          <div className="pdf-page-sheet">
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>04. Clinical & Pipeline Intelligence</h2>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Program</th><th>Target & Modality</th><th>Stage</th><th>Current Status / Next Milestone</th><th>Sales Relevance</th></tr></thead>
+              <tbody>
+                {d.pipelinePrograms.map((p, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{p.name}</strong></td>
+                    <td>{p.target} · {p.modality}</td>
+                    <td>{p.stage}</td>
+                    <td>{p.status} → {p.nextMilestone}</td>
+                    <td><span className="badge badge-success">{p.salesRelevance}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>09. Competitive Landscape Deep-Dive</h2>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Competitor Asset</th><th>Technical Focus</th><th>Relevance & Impact on Sutro</th><th>Sales Urgency</th></tr></thead>
+              <tbody>
+                {d.topCompetitors.map((c, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{c.name}</strong></td>
+                    <td>{c.technicalFocus}</td>
+                    <td>{c.effectOnAccount}</td>
+                    <td>{c.salesRelevance}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>11. Commercial Opportunities (Hypotheses)</h2>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Potential Opportunity</th><th>Driver / Signal</th><th>Confidence</th><th>Status</th><th>Validation Needed</th></tr></thead>
+              <tbody>
+                {d.commercialOpportunities.map((op, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{op.title}</strong></td>
+                    <td>{op.whyWeSeeIt}</td>
+                    <td>{op.confidence}</td>
+                    <td><span className="badge badge-warning">{op.status}</span></td>
+                    <td>{op.validationRequired}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Sheet 3: Contacts, Next Best Action & Evidence */}
+          <div className="pdf-page-sheet">
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>10. Key Contacts & Buying Committee</h2>
+            <table className="pdf-doc-table">
+              <thead><tr><th>Contact & Title</th><th>Buying Role</th><th>Why Relevant</th><th>Verified Email</th></tr></thead>
+              <tbody>
+                {d.contacts.map((ct, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{ct.name}</strong><br /><small style={{ color: "#64748b" }}>{ct.title}</small></td>
+                    <td>{ct.buyingRole}</td>
+                    <td>{ct.whyRelevant}</td>
+                    <td><code>{ct.email}</code></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>15. Next Best Action Playbook</h2>
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "12px", fontSize: "11.5px" }}>
+              <p style={{ margin: "0 0 6px" }}><strong>PRIMARY ACTION: </strong>{d.nextBestAction.primaryAction}</p>
+              <p style={{ margin: "0 0 6px" }}><strong>WHO & WHY NOW: </strong>{d.nextBestAction.who} — {d.nextBestAction.whyNow}</p>
+              <p style={{ margin: "0 0 6px" }}><strong>DISCOVERY ANGLE: </strong>{d.nextBestAction.conversationAngle}</p>
+              <p style={{ margin: 0 }}><strong>DESIRED OUTCOME: </strong>{d.nextBestAction.desiredOutcome}</p>
             </div>
 
-            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "16px" }}>01. Executive Sales Brief</h2>
-            <p><strong>Decision:</strong> {d.decision}. {d.decisionSubtitle}</p>
-            <table className="pdf-doc-table">
-              <thead><tr><th>Item</th><th>Value</th></tr></thead>
+            <h2 style={{ fontSize: "15px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>18. Evidence Ledger (E01–E21)</h2>
+            <table className="pdf-doc-table" style={{ fontSize: "10.5px" }}>
+              <thead><tr><th>ID</th><th>Verified Claim</th><th>Source</th><th>Type</th><th>Confidence</th></tr></thead>
               <tbody>
-                <tr><td>Account</td><td>{d.account}</td></tr>
-                <tr><td>Account type</td><td>Biotech, clinical-stage oncology (ADC modality). Archetype confidence: High</td></tr>
-                <tr><td>Location</td><td>{d.location} [E01][E06]</td></tr>
-                <tr><td>Parent / ownership</td><td>Public company, Nasdaq: STRO; incorporated in Delaware in 2003 [E06]</td></tr>
-                <tr><td>Opportunity score</td><td>65 / 100, Medium priority (Fit 7.7, Urgency 8.5, Deal 5.4 = 21.6/30)</td></tr>
-                <tr><td>Intelligence confidence</td><td>68%, Moderate (Completeness: 76% - 19 of 25 elements)</td></tr>
-              </tbody>
-            </table>
-
-            <h3 style={{ fontSize: "13px", color: "#0f2b48", marginTop: "14px" }}>Why this account?</h3>
-            <ul style={{ margin: "4px 0 12px", paddingLeft: "20px", fontSize: "12px" }}>
-              {d.whyThisAccount.map((item, idx) => (
-                <li key={idx}><strong>{item.label}:</strong> {item.text}</li>
-              ))}
-            </ul>
-
-            <h3 style={{ fontSize: "13px", color: "#0f2b48", marginTop: "10px" }}>Why now?</h3>
-            <ul style={{ margin: "4px 0 12px", paddingLeft: "20px", fontSize: "12px" }}>
-              {d.whyNow.map((item, idx) => (
-                <li key={idx}><strong>{item.label}:</strong> {item.text}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Sheet 2: Pipeline, Funding & Buying Committee */}
-          <div className="pdf-page-sheet">
-            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>04. Pipeline & Service Fit (A)</h2>
-            <table className="pdf-doc-table">
-              <thead><tr><th>Program</th><th>Target and design</th><th>Stage (as of 5 Oct 2026)</th><th>Next milestone</th><th>Evidence</th></tr></thead>
-              <tbody>
-                {d.pipelineTable.map((row, idx) => (
-                  <tr key={idx}>
-                    <td><strong>{row[0]}</strong></td>
-                    <td>{row[1]}</td>
-                    <td>{row[2]}</td>
-                    <td>{row[3]}</td>
-                    <td>{row[4]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "24px" }}>06. Funding & Runway</h2>
-            <p style={{ fontSize: "12px", margin: "4px 0 8px" }}><strong>Company guidance:</strong> Cash was $164.3M at 30 Jun 2026; runway into at least Q2 2028, excluding anticipated partner milestones [E01].</p>
-            <table className="pdf-doc-table">
-              <thead><tr><th>Date</th><th>Cash, equivalents and marketable securities</th><th>Evidence</th></tr></thead>
-              <tbody>
-                {d.fundingTable.map((row, idx) => (
-                  <tr key={idx}>
-                    <td>{row[0]}</td>
-                    <td><strong>{row[1]}</strong></td>
-                    <td>{row[2]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "24px" }}>11. Buying Committee</h2>
-            <table className="pdf-doc-table">
-              <thead><tr><th>Role (AI-assessed)</th><th>Name and title</th><th>Basis</th><th>Confidence</th><th>Influence</th></tr></thead>
-              <tbody>
-                {d.buyingCommittee.map((row, idx) => (
-                  <tr key={idx}>
-                    <td><strong>{row.role}</strong></td>
-                    <td>{row.name}, {row.title}</td>
-                    <td>{row.basis}</td>
-                    <td>{row.confidence}</td>
-                    <td>{row.influence}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Sheet 3: Outreach Messages, Evidence Ledger & Scoring */}
-          <div className="pdf-page-sheet">
-            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>18. Outreach Messages</h2>
-            {d.outreachMessages.slice(0, 2).map((msg, idx) => (
-              <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "6px", padding: "12px", marginBottom: "12px", fontSize: "12px" }}>
-                <strong style={{ color: "#0f2b48" }}>{msg.title}</strong>
-                <div style={{ color: "#64748b", margin: "3px 0 6px" }}>Subject: {msg.subject}</div>
-                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0, color: "#334155" }}>{msg.body}</pre>
-              </div>
-            ))}
-
-            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>20. Evidence & Source Ledger (E01–E21)</h2>
-            <table className="pdf-doc-table" style={{ fontSize: "11px" }}>
-              <thead><tr><th>ID</th><th>Claim</th><th>Source</th><th>Type</th><th>Confidence</th></tr></thead>
-              <tbody>
-                {sutroEvidenceLedger.slice(0, 8).map((ev) => (
+                {sutroEvidenceLedger.slice(0, 7).map((ev) => (
                   <tr key={ev.id}>
                     <td><strong>[{ev.id}]</strong></td>
                     <td>{ev.claim}</td>
@@ -558,22 +2355,7 @@ function PdfPreviewModal({ onClose, onDownload }: { onClose: () => void; onDownl
                 ))}
               </tbody>
             </table>
-            <p style={{ fontSize: "11px", color: "#64748b", margin: "4px 0 0" }}>+ 13 more verified evidence records (E09 to E21) available in full digital report.</p>
-
-            <h2 style={{ fontSize: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px", marginTop: "20px" }}>21. Scoring & Methodology (100 Points)</h2>
-            <table className="pdf-doc-table" style={{ fontSize: "11.5px" }}>
-              <thead><tr><th>Dimension</th><th>Score</th><th>Reason</th><th>Confidence</th></tr></thead>
-              <tbody>
-                {d.scoringBreakdown.map((row, idx) => (
-                  <tr key={idx}>
-                    <td><strong>{row[0]}</strong></td>
-                    <td>{row[1]}</td>
-                    <td>{row[2]}</td>
-                    <td>{row[3]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <p style={{ fontSize: "10px", color: "#64748b", margin: "4px 0 0" }}>+ 14 more verified primary evidence records available in interactive OutreachLens platform.</p>
           </div>
         </div>
       </div>
@@ -581,9 +2363,11 @@ function PdfPreviewModal({ onClose, onDownload }: { onClose: () => void; onDownl
   );
 }
 
-function Report({ setPage }: { setPage: (p: Page) => void }) {
+function Report({ setPage, activeCampaign = "North America Oncology ADC Growth Campaign 2026" }: { setPage: (p: Page) => void; activeCampaign?: string }) {
   const [activeEvidence, setActiveEvidence] = useState<EvidenceItem | null>(null);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState<"OVERVIEW" | "SCORE" | "INTELLIGENCE" | "CONTACTS" | "STRATEGY" | "OUTREACH" | "EVIDENCE">("OVERVIEW");
+  const [expandedProgram, setExpandedProgram] = useState<string | null>("STRO-004 (Lead Asset)");
   const [toast, setToast] = useState("");
   const notify = (x: string) => { setToast(x); setTimeout(() => setToast(""), 2400); };
 
@@ -599,7 +2383,7 @@ function Report({ setPage }: { setPage: (p: Page) => void }) {
 
   const handleDownloadPDF = () => {
     const prevTitle = document.title;
-    document.title = "Sutro_Biopharma_Account_Intelligence_Report_OutreachLens";
+    document.title = "Sutro_Biopharma_Sales_Decision_Report_OutreachLens";
     notify("Opening Save as PDF / Print preview dialog...");
     setTimeout(() => {
       window.print();
@@ -609,550 +2393,1160 @@ function Report({ setPage }: { setPage: (p: Page) => void }) {
 
   const d = sutroAccountData;
 
-  return <div className="report-page"><div className="report-crumbs"><button onClick={() => setPage("results")}>Account Results</button><Icon name="arrow" size={13} /><span>{d.account}</span></div>
-    <header className="report-hero">
-      <div className="report-title-row">
-        <div className="account-logo" style={{ background: "var(--navy-950)", color: "white", fontSize: "16px", fontWeight: "700" }}>STRO</div>
-        <div>
-          <span className="report-kicker">ACCOUNT INTELLIGENCE REPORT • LIFE SCIENCES</span>
-          <h1>{d.account} <small style={{ fontSize: "16px", color: "var(--slate-500)", fontWeight: "500" }}>({d.ticker})</small></h1>
-          <p>
-            <a href="https://www.sutrobio.com" target="_blank" rel="noreferrer">sutrobio.com <Icon name="external" size={12} /></a>
-            <span>{d.location}</span>
-            <span>Biotech (ADC Oncology)</span>
-            <span>Research date: {d.date}</span>
-          </p>
+  const classificationBadge = (type: string) => {
+    switch (type) {
+      case "VERIFIED FACT":
+        return <span className="lens-class-badge fact">VERIFIED FACT</span>;
+      case "DERIVED INSIGHT":
+        return <span className="lens-class-badge insight">DERIVED INSIGHT</span>;
+      case "SALES HYPOTHESIS":
+        return <span className="lens-class-badge hypothesis">SALES HYPOTHESIS</span>;
+      case "RECOMMENDATION":
+        return <span className="lens-class-badge recommendation">RECOMMENDATION</span>;
+      default:
+        return <span className="lens-class-badge unverified">UNVERIFIED / UNKNOWN</span>;
+    }
+  };
+
+  return (
+    <div className="lens-page-body report-page">
+      {/* 5. REDESIGNED ACCOUNT HEADER (Consistent Qualification & No Contradictory Badges) */}
+      <div className="lens-account-header-hero">
+        <div className="lens-header-top-row">
+          <div className="lens-company-title-area">
+            <div className="lens-company-logo-avatar">S</div>
+            <div>
+              <div className="lens-company-title-wrap">
+                <h1>{d.account}</h1>
+                <span className="badge badge-success"><Icon name="check" size={11} /> VERIFIED ACCOUNT</span>
+                <span className="lens-badge-public">{d.ticker}</span>
+              </div>
+              <div className="lens-company-meta-strip">
+                <span>{d.sector}</span>
+                <span>•</span>
+                <span>{d.location}</span>
+                <span>•</span>
+                <a href={`https://${d.companyOverview.snapshot.website}`} target="_blank" rel="noreferrer">
+                  {d.companyOverview.snapshot.website} ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Header Actions */}
+          <div className="lens-header-cta-group">
+            <Button variant="secondary" icon="download" onClick={handleDownloadPDF}>
+              Export PDF
+            </Button>
+            <Button variant="primary" icon="spark" onClick={() => setActiveTab("OUTREACH")}>
+              Generate Outreach
+            </Button>
+          </div>
         </div>
-        <div className="report-actions">
-          <Button variant="secondary" icon="eye" onClick={() => setShowPdfPreview(true)}>PDF Preview</Button>
-          <Button variant="secondary" icon="download" onClick={handleDownloadPDF}>Download PDF</Button>
-          <Button variant="secondary" icon="print" onClick={handleDownloadPDF}>Print</Button>
-          <Button variant="secondary" icon="share" onClick={() => notify("Report link copied to clipboard")}>Share</Button>
-          <Button icon="refresh" onClick={() => notify("Refreshing live account intelligence...")}>Refresh</Button>
+
+        {/* 6 STANDARDIZED QUALIFICATION CARDS */}
+        <div className="lens-qualification-cards-grid">
+          <div className="lens-qual-card score-card">
+            <span className="qual-label">OPPORTUNITY SCORE</span>
+            <div className="qual-value">
+              <strong>{d.opportunityScore}</strong>
+              <small>/ 100</small>
+            </div>
+            <div className="qual-sub">Prioritization score, not win prob.</div>
+          </div>
+
+          <div className="lens-qual-card">
+            <span className="qual-label">ICP FIT</span>
+            <div className="qual-status-chip strong">
+              <Icon name="check" size={12} /> {d.icpFit}
+            </div>
+            <div className="qual-sub">Matched to active campaign</div>
+          </div>
+
+          <div className="lens-qual-card">
+            <span className="qual-label">DEMAND STRENGTH</span>
+            <div className="qual-status-chip high">
+              <Icon name="trend" size={12} /> {d.demandStrength}
+            </div>
+            <div className="qual-sub">3 parallel ADC clinical triggers</div>
+          </div>
+
+          <div className="lens-qual-card">
+            <span className="qual-label">BUYING INTENT</span>
+            <div className="qual-status-chip unverified">
+              <Icon name="help" size={12} /> {d.buyingIntent}
+            </div>
+            <div className="qual-sub">No active public RFP identified</div>
+          </div>
+
+          <div className="lens-qual-card">
+            <span className="qual-label">CONFIDENCE</span>
+            <div className="qual-status-chip moderate">
+              <Icon name="shield" size={12} /> {d.opportunityConfidence}
+            </div>
+            <div className="qual-sub">SEC & official trial disclosures</div>
+          </div>
+
+          <div className="lens-qual-card">
+            <span className="qual-label">COMPLETENESS</span>
+            <div className="qual-status-chip completeness">
+              <strong>{d.researchCompleteness}%</strong>
+            </div>
+            <div className="qual-sub">{d.completenessCount}</div>
+          </div>
+        </div>
+
+        {/* 60-SECOND EXECUTIVE DECISION SUMMARY BANNER */}
+        <div className="lens-decision-banner">
+          <div className="decision-flag">
+            <span>DECISION STRATEGY</span>
+            <strong>{d.decision}</strong>
+          </div>
+          <p>{d.decisionSubtitle}</p>
         </div>
       </div>
 
-      <div className="report-meta-grid">
-        <div><span>Decision</span><Badge tone="warning">{d.decision}</Badge></div>
-        <div><span>Opportunity Score</span><strong>{d.scores.opportunityScore} <small>/ 100</small></strong></div>
-        <div><span>Intelligence Confidence</span><strong>{d.scores.confidence}% <small>(Moderate)</small></strong></div>
-        <div><span>Research Completeness</span><strong>{d.scores.completeness}% <small>({d.scores.completenessCount})</small></strong></div>
-        <div><span>Compact Score View</span><strong>Fit {d.scores.fitScore} · Urg {d.scores.urgencyScore} · Deal {d.scores.dealScore} = {d.scores.totalCompact}/30</strong></div>
+      {/* 4. PRIMARY REPORT NAVIGATION TABS */}
+      <div className="lens-primary-report-tabs">
+        {[
+          { id: "OVERVIEW", label: "OVERVIEW", icon: "briefcase" as IconName, desc: "Company & Brief" },
+          { id: "SCORE", label: "SCORE", icon: "activity" as IconName, desc: "100-Pt Breakdown" },
+          { id: "INTELLIGENCE", label: "INTELLIGENCE", icon: "spark" as IconName, desc: "Clinical, CMC & Competition" },
+          { id: "CONTACTS", label: "CONTACTS", icon: "users" as IconName, desc: "Buying Committee" },
+          { id: "STRATEGY", label: "STRATEGY", icon: "trend" as IconName, desc: "Opportunities & Playbook" },
+          { id: "OUTREACH", label: "OUTREACH", icon: "campaign" as IconName, desc: "Multi-Channel Drafts" },
+          { id: "EVIDENCE", label: "EVIDENCE", icon: "shield" as IconName, desc: "Ledger & Gaps (21)" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            className={`lens-primary-tab-btn ${activeTab === tab.id ? "active" : ""}`}
+            onClick={() => setActiveTab(tab.id as any)}
+          >
+            <Icon name={tab.icon} size={15} />
+            <div className="tab-btn-text">
+              <strong>{tab.label}</strong>
+              <small>{tab.desc}</small>
+            </div>
+          </button>
+        ))}
       </div>
 
-      <div style={{ marginTop: "12px", padding: "10px 14px", background: "var(--orange-50)", border: "1px solid #fed7aa", borderRadius: "8px", fontSize: "12.5px", color: "#9a3412" }}>
-        <strong>DEMO RUN — ASSUMED SELLER: </strong>{d.demoNotice}
-      </div>
-
-      <div className="report-legend" style={{ marginTop: "12px" }}>
-        <span><i className="verified-dot" /> VF = Verified fact</span>
-        <span><i className="ai-dot" /> DI = Derived insight</span>
-        <span><i className="hypothesis-dot" /> SH = Sales hypothesis</span>
-        <span><Badge tone="success" style={{ padding: "1px 6px" }}>REC</Badge> Recommendation</span>
-        <span><Badge tone="neutral" style={{ padding: "1px 6px" }}>UV</Badge> Unverified</span>
-        <span><Icon name="shield" size={14} /> 21 re-checkable sources [E01–E21]</span>
-      </div>
-    </header>
-
-    <div className="report-layout">
-      <aside className="report-nav">
-        <span>REPORT CONTENTS</span>
-        {reportNav.map((x, i) => <a href={`#section-${i + 1}`} key={x}><b>{String(i + 1).padStart(2, "0")}</b>{x.replace(/^\d+\.\s*/, "")}</a>)}
-      </aside>
-
-      <main className="report-content">
-        {/* 01. Executive Sales Brief */}
-        <ReportSection n={1} title="Executive Sales Brief" subtitle="Decision: PURSUE WITH VALIDATION. Several time-sensitive triggers are public and funded.">
-          <div className="executive-grid">
-            <div className="exec-card verified">
-              <span>WHY THIS ACCOUNT?</span>
-              <p>Three programs are moving into or toward the clinic at once (STRO-004 Phase 1, STRO-006 Phase 1 entry, STRO-227 IND), with funding into at least Q2 2028. Manufacturing fully outsourced.</p>
-              <small>VERIFIED FACT · <Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E03" onClick={handleEvidenceClick} /> <Evidence id="E07" onClick={handleEvidenceClick} /></small>
-            </div>
-            <div className="exec-card verified">
-              <span>WHY NOW?</span>
-              <p>STRO-006 first-in-human start was guided for Q3 2026. STRO-227 IND filing guided for later in 2026 with CMC underway. STRO-004 is actively in dose optimization (4–5 mg/kg).</p>
-              <small>VERIFIED FACT · <Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E02" onClick={handleEvidenceClick} /></small>
-            </div>
-            <div className="exec-card ai">
-              <span>WHY WE COULD WIN</span>
-              <p>Parallel programs create concurrent start-up and CMC workload for a lean team after ~50% restructuring. 10-K explicitly relies on third-party CROs and CDMOs.</p>
-              <small>DERIVED INSIGHT · <Evidence id="E07" onClick={handleEvidenceClick} /> <Evidence id="E08" onClick={handleEvidenceClick} /></small>
-            </div>
-            <div className="exec-card hypothesis">
-              <span>WHY WE COULD LOSE</span>
-              <p>Incumbent CRO/CDMO vendor relationships are unknown. Cost discipline after two restructurings; quarterly revenue dropped following partner exit.</p>
-              <small>SALES HYPOTHESIS & UNVERIFIED · <Evidence id="E15" onClick={handleEvidenceClick} /> <Evidence id="E16" onClick={handleEvidenceClick} /></small>
-            </div>
-            <div className="exec-card recommendation">
-              <span>RECOMMENDED NEXT ACTION</span>
-              <p>{d.recommendedAction}</p>
-              <small>RECOMMENDATION · <Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E14" onClick={handleEvidenceClick} /></small>
-            </div>
-          </div>
-        </ReportSection>
-
-        {/* 02. Account Profile */}
-        <ReportSection n={2} title="Account Profile" subtitle="Public corporate details, clinical modality, revenue and facility structure.">
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Field</th><th>Value</th><th>Evidence</th></tr></thead>
-              <tbody>
-                {d.accountProfileTable.map((r, i) => (
-                  <tr key={i}>
-                    <td><strong>{r[0]}</strong></td>
-                    <td>{r[1]}</td>
-                    <td>{r[2] !== "—" ? <Evidence id={r[2].replace(/[\[\]]/g, "")} onClick={handleEvidenceClick} /> : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ReportSection>
-
-        {/* 03. Customer / ICP Fit */}
-        <ReportSection n={3} title="Customer / ICP Fit" subtitle="Score: 13 / 15. Clinical-stage oncology biotech with outsourced manufacturing.">
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Dimension</th><th>Assessment</th><th>Reason</th><th>Evidence</th><th>Confidence</th><th>Gap</th></tr></thead>
-              <tbody>
-                {d.icpFitTable.map((r, i) => (
-                  <tr key={i}>
-                    <td><strong>{r[0]}</strong></td>
-                    <td><Badge tone={r[1] === "High" ? "success" : "warning"}>{r[1]}</Badge></td>
-                    <td>{r[2]}</td>
-                    <td><Evidence id={r[3].replace(/[\[\]]/g, "")} onClick={handleEvidenceClick} /></td>
-                    <td><Badge tone="blue">{r[4]}</Badge></td>
-                    <td>{r[5]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ReportSection>
-
-        {/* 04. Pipeline & Service Fit */}
-        <ReportSection n={4} title="Pipeline & Service Fit (A)" subtitle="Score: 10 / 15. Provisional because seller is assumed as an early-phase oncology CRO/CMC partner.">
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Program</th><th>Target and design</th><th>Stage (as of 5 Oct 2026)</th><th>Next milestone</th><th>Evidence</th></tr></thead>
-              <tbody>
-                {d.pipelineTable.map((r, i) => (
-                  <tr key={i}>
-                    <td><strong>{r[0]}</strong></td>
-                    <td>{r[1]}</td>
-                    <td><Badge tone="blue">{r[2]}</Badge></td>
-                    <td>{r[3]}</td>
-                    <td><Evidence id={r[4].replace(/[\[\]]/g, "").split("][")[0]} onClick={handleEvidenceClick} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="product-fit-callout" style={{ marginTop: "14px" }}>
-            <Badge tone="warning">Service-fit assessment (A)</Badge>
-            <p><strong>Three live workloads visible from public evidence:</strong> Site & CRO start-up for STRO-006 first-in-human; CMC and analytical support for exatecan DAR8 ADCs + IND work on STRO-227; Possible expansion of STRO-004 after dose selection.</p>
-          </div>
-        </ReportSection>
-
-        {/* 05. Clinical / Pipeline Intelligence */}
-        <ReportSection n={5} title="Clinical / Pipeline Intelligence" subtitle="Trial NCT07227168 (STRIVE-01) details and preclinical disclosures.">
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Signal</th><th>Date</th><th>Evidence</th><th>Confidence</th><th>Implication</th></tr></thead>
-              <tbody>
-                {d.clinicalSignals.map((r, i) => (
-                  <tr key={i}>
-                    <td><strong>{r[0]}</strong></td>
-                    <td>{r[1]}</td>
-                    <td><Evidence id={r[2].replace(/[\[\]]/g, "").split("][")[0]} onClick={handleEvidenceClick} /></td>
-                    <td><Badge tone={r[3].includes("High") ? "success" : "warning"}>{r[3]}</Badge></td>
-                    <td>{r[4]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ReportSection>
-
-        {/* 06. Funding & Runway */}
-        <ReportSection n={6} title="Funding & Runway" subtitle="Spending capacity: $164.3M cash as of 30 Jun 2026 with runway into at least Q2 2028.">
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Date</th><th>Cash, equivalents and marketable securities</th><th>Evidence</th></tr></thead>
-              <tbody>
-                {d.fundingTable.map((r, i) => (
-                  <tr key={i}>
-                    <td>{r[0]}</td>
-                    <td><strong>{r[1]}</strong></td>
-                    <td><Evidence id={r[2].replace(/[\[\]]/g, "")} onClick={handleEvidenceClick} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p style={{ fontSize: "12px", color: "var(--slate-500)", marginTop: "8px" }}>Note: Milestones from Astellas ($10M + $7.5M triggered) provide non-dilutive upside. Spending capacity is a demand indicator, not a buying signal.</p>
-        </ReportSection>
-
-        {/* 07. Demand & Buying Intent */}
-        <ReportSection n={7} title="Demand & Buying Intent" subtitle="Demand signals are strong, but no public RFP or verified vendor search exists.">
-          <div className="two-col">
-            <SignalList title="Demand Signals (Strong)" items={["STRO-006 first-in-human guided for Q3 2026 — Start-up work due now", "STRO-227 IND filing in late 2026 — IND-enabling & CMC demand", "STRO-004 dose optimization in progress — Potential expansion cohorts", "Funded $110M raise & $164.3M cash — Financial capacity to spend"]} />
-            <SignalList title="Buying Signals (None Verified)" items={["RFP or CDMO tender — Not found in public sources", "New CRO vendor announcement — Not found for current programs", "Procurement leadership change — Not retrieved", "Reliance on outsourced CROs/CDMOs — Stated in 10-K risk factor"]} />
-          </div>
-        </ReportSection>
-
-        {/* 08. Market & Competitive Intelligence */}
-        <ReportSection n={8} title="Market & Competitive Intelligence" subtitle="TF-targeted ADC landscape (Adcendo ADCE-T02, Lepu, Evopoint) and CDMO history.">
-          <div className="section-callout warning">
-            <Icon name="help" />
-            <p><strong>Incumbent vendor relationships unknown:</strong> Boehringer Ingelheim scaled luvelta at 4,500L in Vienna historically [E16], but luvelta is closed. Current vendors for STRO-004/006/227 are unverified.</p>
-          </div>
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Competitor / Target</th><th>Modality / Stage</th><th>Account Evidence</th><th>Market Context</th></tr></thead>
-              <tbody>
-                <tr><td><strong>Adcendo (ADCE-T02)</strong></td><td>Tissue Factor ADC, Phase 1 (NCT06597721)</td><td><Evidence id="E19" onClick={handleEvidenceClick} /></td><td>Recruiting since Nov 2024; active competition in TF space</td></tr>
-                <tr><td><strong>Lepu / Evopoint</strong></td><td>TF ADCs in development</td><td><Evidence id="E18" onClick={handleEvidenceClick} /></td><td>Crowded target accelerates need for Sutro speed & clean CMC</td></tr>
-                <tr><td><strong>Incumbent CRO / CDMO</strong></td><td>Unknown for active clinical assets</td><td><Evidence id="E08" onClick={handleEvidenceClick} /></td><td>Outsourced model confirmed, specific partners unverified</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </ReportSection>
-
-        {/* 09. Regulatory, Manufacturing & Supply */}
-        <ReportSection n={9} title="Regulatory, Manufacturing & Supply" subtitle="Replaces Access & Reimbursement (points reassigned to funding & regulatory readiness).">
-          <div className="status-grid">
-            {[
-              ["Approved Products", "None", "Clinical-stage biotech [E01]"],
-              ["IND Status", "Verified", "STRO-004 cleared; STRO-006/227 guided for 2026 [E12][E01]"],
-              ["Manufacturing Model", "Verified", "San Carlos GMP closed; 100% outsourced to CDMOs [E07][E08]"],
-              ["Named CDMO (Current)", "Unverified", "Historical Boehringer Ingelheim for luvelta only [E16]"],
-              ["Canada / Reimbursement", "Not Applicable", "Pre-approval clinical stage"],
-              ["Patents / USPTO", "Unchecked", "USPTO not queried in this run"]
-            ].map((x) => (
-              <div key={x[0]}>
-                <span>{x[0]}</span>
-                <Badge tone={x[1] === "Verified" ? "success" : x[1] === "None" ? "neutral" : "warning"}>{x[1]}</Badge>
-                <p>{x[2]}</p>
+      {/* ========================================================================= */}
+      {/* TAB 1: OVERVIEW (01. Company Overview, 02. Executive Brief, 03. ICP Fit) */}
+      {/* ========================================================================= */}
+      {activeTab === "OVERVIEW" && (
+        <div className="lens-tab-content-pane">
+          {/* SECTION 01: COMPANY OVERVIEW */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">01</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Company Overview & Commercial Profile</strong>
               </div>
-            ))}
-          </div>
-        </ReportSection>
+              <span className="lens-source-trigger" onClick={() => handleEvidenceClick("E06")}>
+                Evidence · 3 sources <Icon name="shield" size={12} />
+              </span>
+            </div>
 
-        {/* 10. Procurement / Vendor Intelligence */}
-        <ReportSection n={10} title="Procurement / Vendor Intelligence" subtitle="Vendor selection pathway, cost commitments and alliance leadership.">
-          <div className="procure-summary">
-            <div><span>Vendor Model</span><strong>Fully outsourced CROs & CMOs</strong><Badge tone="success">Verified fact [E08]</Badge></div>
-            <div><span>Vendor Commitments</span><strong>Active commitments to third-party CROs/CMOs</strong><Badge tone="blue">Historical [E17]</Badge></div>
-            <div><span>Alliance Function</span><strong>Portfolio Strategy & Strategic CMO Alliances</strong><Badge tone="warning">Directory [E21]</Badge></div>
-          </div>
-        </ReportSection>
+            {/* AI Summary */}
+            <div className="lens-concise-summary-box">
+              <p>{d.companyOverview.summary}</p>
+            </div>
 
-        {/* 11. Buying Committee */}
-        <ReportSection n={11} title="Buying Committee" subtitle="Key executive officers identified from SEC proxy filings [E14] and releases.">
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Role (AI-assessed)</th><th>Name and title</th><th>Basis</th><th>Confidence</th><th>Influence</th></tr></thead>
-              <tbody>
-                {d.buyingCommittee.map((m, i) => (
-                  <tr key={i}>
-                    <td><strong>{m.role}</strong></td>
-                    <td>{m.name} — <em>{m.title}</em></td>
-                    <td>{m.basis}</td>
-                    <td><Badge tone={m.confidence === "High" ? "success" : m.confidence === "Good" ? "blue" : "warning"}>{m.confidence}</Badge></td>
-                    <td><strong>{m.influence}</strong></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ReportSection>
-
-        {/* 12. Commercial Opportunity */}
-        <ReportSection n={12} title="Commercial Opportunity (A)" subtitle="Moderate potential. Several concurrent programs with funded runway ($164.3M). Score: 8 / 15.">
-          <div className="commercial-hero">
-            <div><span>OPPORTUNITY TYPE</span><strong>New Vendor Relationship · Early-Phase CRO/CMC</strong></div>
-            <div><span>COMMERCIAL POTENTIAL</span><Badge tone="warning">MODERATE (SCORE 8 / 15)</Badge></div>
-          </div>
-          <div className="indicator-grid">
-            {["Parallel pipeline programs [E01]", "Outsourced manufacturing [E08]", "Funded runway to Q2 2028 [E01]", "STRO-006 start-up timing", "STRO-227 IND CMC demands", "Incumbent vendor contracts", "Vendor spend budget"].map((x, i) => (
-              <div key={x}>
-                <span>{i < 5 ? <Icon name="check" /> : "?"}</span>
-                <strong>{x}</strong>
-                <small>{i < 5 ? "Positive indicator" : "Requires discovery"}</small>
+            {/* Structured Company Snapshot Grid */}
+            <div className="lens-structured-field-grid">
+              <div className="field-cell">
+                <small>INDUSTRY</small>
+                <strong>{d.companyOverview.snapshot.industry}</strong>
               </div>
-            ))}
-          </div>
-        </ReportSection>
-
-        {/* 13. White Space */}
-        <ReportSection n={13} title="White Space" subtitle="Potential entry opportunities based on pipeline milestones and lean organizational structure.">
-          <div className="white-space-map">
-            <div>
-              <span>CURRENT OBSERVATION</span>
-              <h3>US-only STRIVE-01 & Outsourced CDMO</h3>
-              <p>Internal manufacturing decommissioned; lean team executing parallel trials [E07][E10].</p>
-              <Badge>Internal vendor data unavailable</Badge>
+              <div className="field-cell">
+                <small>DEVELOPMENT STAGE</small>
+                <strong>{d.companyOverview.snapshot.companyStage}</strong>
+              </div>
+              <div className="field-cell">
+                <small>HEADQUARTERS</small>
+                <strong>{d.companyOverview.snapshot.headquarters}</strong>
+              </div>
+              <div className="field-cell">
+                <small>EMPLOYEES (VERIFIED)</small>
+                <strong>{d.companyOverview.snapshot.employees}</strong>
+              </div>
+              <div className="field-cell">
+                <small>REPORTED REVENUE & PERIOD</small>
+                <strong>{d.companyOverview.snapshot.revenue} ({d.companyOverview.snapshot.revenuePeriod})</strong>
+              </div>
+              <div className="field-cell">
+                <small>CASH POSITION & RUNWAY</small>
+                <strong>{d.financialData.cashPosition} ({d.financialData.runwayHorizon})</strong>
+              </div>
+              <div className="field-cell">
+                <small>PUBLIC / TICKER</small>
+                <strong>{d.companyOverview.snapshot.publicPrivate} · {d.companyOverview.snapshot.exchangeTicker}</strong>
+              </div>
+              <div className="field-cell">
+                <small>CORE MODALITY / TECH</small>
+                <strong>{d.companyOverview.snapshot.coreTechnology}</strong>
+              </div>
             </div>
-            <Icon name="arrow" size={24} />
-            <div>
-              <span>POTENTIAL WHITE SPACE</span>
-              <h3>STRO-006 Start-up & STRO-227 CMC</h3>
-              <p>Specialist support for analytical testing, IND-enabling packages, and trial site activation.</p>
-              <Badge tone="orange">Sales hypothesis</Badge>
-            </div>
-          </div>
-        </ReportSection>
 
-        {/* 14. Risks & Deal Blockers */}
-        <ReportSection n={14} title="Risks & Deal Blockers" subtitle="7 identified risks, severity assessments and suggested validation steps.">
-          <div className="risk-table">
-            {d.risks.map((r, i) => (
-              <div key={i}>
+            {/* Business & Commercial Profile Sub-section */}
+            <div className="lens-sub-profile-card">
+              <strong style={{ fontSize: "13px", color: "#1e1b4b", display: "block", marginBottom: "10px" }}>
+                BUSINESS & COMMERCIAL OPERATING PROFILE
+              </strong>
+              <div className="profile-grid">
+                <div><span>What They Do:</span> <p>{d.companyOverview.commercialProfile.whatTheyDo}</p></div>
+                <div><span>Pipeline Depth:</span> <p>{d.companyOverview.commercialProfile.pipelineDepth}</p></div>
+                <div><span>Externalization Model:</span> <p>{d.companyOverview.commercialProfile.externalizationModel}</p></div>
+                <div><span>Current Strategic Focus:</span> <p>{d.companyOverview.commercialProfile.strategicFocus}</p></div>
+              </div>
+            </div>
+          </Card>
+
+          {/* SECTION 02: EXECUTIVE SALES BRIEF */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">02</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Executive Sales Brief</strong>
+              </div>
+              <span className="lens-source-trigger" onClick={() => handleEvidenceClick("E01")}>
+                Evidence: [E01][E07][E14] <Icon name="shield" size={12} />
+              </span>
+            </div>
+
+            <div className="lens-three-questions-grid">
+              <div className="brief-question-col">
+                <div className="question-header">
+                  <span className="num-circle">1</span>
+                  <strong>WHY THIS ACCOUNT?</strong>
+                </div>
+                <p>{d.executiveBrief.whyThisAccount}</p>
+              </div>
+
+              <div className="brief-question-col highlight">
+                <div className="question-header">
+                  <span className="num-circle">2</span>
+                  <strong>WHY CONTACT NOW?</strong>
+                </div>
+                <p>{d.executiveBrief.whyContactNow}</p>
+              </div>
+
+              <div className="brief-question-col">
+                <div className="question-header">
+                  <span className="num-circle">3</span>
+                  <strong>WHO TO CONTACT?</strong>
+                </div>
+                <p>{d.executiveBrief.whoToContact}</p>
+              </div>
+            </div>
+
+            <div className="lens-sales-takeaway-bar">
+              <Icon name="spark" size={16} />
+              <div>
+                <strong>SALES TAKEAWAY: </strong>
+                <span>{d.executiveBrief.salesTakeaway}</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* SECTION 03: ICP & CAMPAIGN FIT */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">03</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>ICP & Campaign Fit Evaluation</strong>
+              </div>
+              <div className="campaign-context-badge">
+                <small>Active Campaign:</small> <strong>{activeCampaign}</strong>
+              </div>
+            </div>
+
+            <div className="lens-table-wrap">
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Criterion</th>
+                    <th>Campaign Requirement</th>
+                    <th>Actual Account Reality</th>
+                    <th>Classification</th>
+                    <th>Fit Assessment</th>
+                    <th>Evidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.icpFitMatrix.map((row, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{row.criterion}</strong></td>
+                      <td style={{ color: "#475569" }}>{row.requirement}</td>
+                      <td><strong>{row.reality}</strong></td>
+                      <td>{classificationBadge(row.classification)}</td>
+                      <td>
+                        <span className={`lens-fit-pill ${row.fit === "Strong" || row.fit === "Pass" ? "strong" : "moderate"}`}>
+                          {row.fit}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="lens-evidence-tag-btn" onClick={() => handleEvidenceClick(row.evidenceId)}>
+                          [{row.evidenceId}]
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: SCORE (Opportunity Score /100, Breakdown, Completeness) */}
+      {/* ========================================================================= */}
+      {activeTab === "SCORE" && (
+        <div className="lens-tab-content-pane">
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">19</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Opportunity Score & Scoring Methodology (100 Points Model)</strong>
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b" }}>
+                Scoring Rule: <em>Sales prioritization index, not probability of winning.</em>
+              </div>
+            </div>
+
+            {/* Score Big Hero Box */}
+            <div className="lens-score-hero-container">
+              <div className="score-dial-box">
+                <div className="score-big-number">{d.opportunityScore}</div>
+                <div className="score-scale">out of 100</div>
+                <span className="badge badge-success">High Priority Account</span>
+              </div>
+              <div className="score-dial-explainer">
+                <h3>Priority Recommendation: Immediate Discovery Track</h3>
+                <p>
+                  Sutro scores 78/100 due to exceptional Operating Model Fit (15/15), Product Fit (13/15), and Demand Strength (14/15) driven by 3 active clinical/IND transitions. Buying Intent is scored at 4/15 because no open public RFP is verified—maintaining analytical integrity.
+                </p>
+                <div className="score-metrics-row">
+                  <div><span>Intelligence Confidence:</span> <strong>{d.opportunityConfidence} (SEC backed)</strong></div>
+                  <div><span>Research Completeness:</span> <strong>{d.researchCompleteness}% ({d.completenessCount})</strong></div>
+                  <div><span>Last Research Update:</span> <strong>{d.date}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed 100-Point Scoring Breakdown Table */}
+            <div className="lens-table-wrap" style={{ marginTop: "20px" }}>
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Scoring Dimension</th>
+                    <th>Score Awarded</th>
+                    <th>Scoring Rationale & Evidence Basis</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.scoringBreakdown.map((row, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{row.dimension}</strong></td>
+                      <td>
+                        <div className="score-bar-inline">
+                          <strong>{row.score}</strong>
+                          <div className="score-track-mini">
+                            <i style={{ width: `${(parseInt(row.score) / row.max) * 100}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ fontSize: "12.5px", color: "#334155" }}>{row.basis}</td>
+                      <td>
+                        <span className={`badge ${row.confidence === "High" ? "badge-success" : row.confidence === "Moderate" ? "badge-blue" : "badge-warning"}`}>
+                          {row.confidence}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: INTELLIGENCE (04. Pipeline, 05. Signals, 06. Finance, 07. CMC, 08. Reg, 09. Competitors) */}
+      {/* ========================================================================= */}
+      {activeTab === "INTELLIGENCE" && (
+        <div className="lens-tab-content-pane">
+          {/* SECTION 04: CLINICAL & PIPELINE INTELLIGENCE */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">04</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Clinical & Pipeline Intelligence</strong>
+              </div>
+              <span className="lens-source-trigger" onClick={() => handleEvidenceClick("E09")}>
+                Evidence: [E01][E06][E09][E10] <Icon name="shield" size={12} />
+              </span>
+            </div>
+
+            <div className="lens-table-wrap">
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Program</th>
+                    <th>Target / Modality</th>
+                    <th>Indication</th>
+                    <th>Stage</th>
+                    <th>Current Status</th>
+                    <th>Next Milestone</th>
+                    <th>Sales Relevance</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.pipelinePrograms.map((p, idx) => {
+                    const isExpanded = expandedProgram === p.name;
+                    return (
+                      <>
+                        <tr key={idx} className={isExpanded ? "row-expanded" : ""} onClick={() => setExpandedProgram(isExpanded ? null : p.name)} style={{ cursor: "pointer" }}>
+                          <td><strong style={{ color: "#1e1b4b" }}>{p.name}</strong></td>
+                          <td>{p.target} · <small>{p.modality}</small></td>
+                          <td style={{ color: "#475569" }}>{p.indication}</td>
+                          <td><span className="lens-stage-tag">{p.stage}</span></td>
+                          <td style={{ fontSize: "12px" }}>{p.status}</td>
+                          <td style={{ fontWeight: "600", color: "#4f46e5" }}>{p.nextMilestone}</td>
+                          <td><span className={`badge ${p.salesRelevance === "High" ? "badge-success" : "badge-blue"}`}>{p.salesRelevance}</span></td>
+                          <td>
+                            <button className="lens-expand-btn">
+                              {isExpanded ? "Close ▲" : "View ▼"}
+                            </button>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="expansion-row">
+                            <td colSpan={8}>
+                              <div className="lens-program-detail-panel">
+                                <div className="detail-grid">
+                                  <div>
+                                    <small>RECENT DEVELOPMENT</small>
+                                    <p>{p.details.recentDev}</p>
+                                  </div>
+                                  <div>
+                                    <small>EXPECTED TIMELINE</small>
+                                    <p>{p.details.timing}</p>
+                                  </div>
+                                  <div>
+                                    <small>PARTNER / SPONSORSHIP</small>
+                                    <p>{p.details.partner}</p>
+                                  </div>
+                                  <div>
+                                    <small>REGULATORY STATUS</small>
+                                    <p>{p.details.regulatoryStatus}</p>
+                                  </div>
+                                </div>
+                                <div className="business-impact-box">
+                                  <strong>POTENTIAL COMMERCIAL & SERVICE IMPACT: </strong>
+                                  <span>{p.details.businessImpact}</span>
+                                  <button className="lens-evidence-tag-btn" style={{ marginLeft: "8px" }} onClick={(e) => { e.stopPropagation(); handleEvidenceClick(p.details.evidenceId); }}>
+                                    Source [{p.details.evidenceId}]
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Sales Interpretation & Validation Checklist */}
+            <div className="lens-two-col-callout">
+              <div className="callout-box interpretation">
+                <strong><Icon name="spark" size={14} /> SALES INTERPRETATION</strong>
+                <p>
+                  Multiple programs progressing concurrently into clinical trials with a lean 130-FTE structure creates acute demand for trial management, patient recruitment predictability, and regulatory CMC support.
+                </p>
+              </div>
+              <div className="callout-box validation">
+                <strong><Icon name="help" size={14} /> WHAT SALES MUST VALIDATE</strong>
+                <p>
+                  Confirm current CRO supporting STRO-004, whether STRO-006 Phase 1 start-up is already locked, and internal clinical operations capacity.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* SECTION 05: BUYING & DEMAND INTELLIGENCE (Strict Fact vs Intent Distinction) */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">05</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Buying & Demand Intelligence</strong>
+              </div>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <span className="badge badge-success">Demand: HIGH</span>
+                <span className="badge badge-warning">Buying Intent: UNVERIFIED</span>
+              </div>
+            </div>
+
+            <div className="lens-table-wrap">
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Verified Signal & Event</th>
+                    <th>Signal Type</th>
+                    <th>Derived Business Insight</th>
+                    <th>Buying Intent</th>
+                    <th>Sales Priority</th>
+                    <th>Evidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.buyingSignals.map((sig, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{sig.signal}</strong></td>
+                      <td><span className="lens-signal-type-pill">{sig.type}</span></td>
+                      <td style={{ fontSize: "12.5px", color: "#334155" }}>{sig.derivedInsight}</td>
+                      <td>
+                        <span className={`lens-intent-badge ${sig.buyingIntent.includes("Indicated") ? "indicated" : "unverified"}`}>
+                          {sig.buyingIntent}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${sig.salesPriority === "HIGH" ? "badge-danger" : "badge-warning"}`}>
+                          {sig.salesPriority}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="lens-evidence-tag-btn" onClick={() => handleEvidenceClick(sig.evidenceId)}>
+                          [{sig.evidenceId}]
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="lens-negative-warning-box">
+              <Icon name="shield" size={16} />
+              <div>
+                <strong>DATA INTEGRITY RULE: </strong>
+                <span>
+                  Hiring activity and leadership changes indicate internal development capacity, NOT confirmed vendor buying intent. No public RFP or vendor replacement process is currently verified.
+                </span>
+              </div>
+            </div>
+          </Card>
+
+          {/* SECTION 06: FUNDING & FINANCIAL INTELLIGENCE */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">06</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Funding & Financial Intelligence</strong>
+              </div>
+              <span className="lens-source-trigger" onClick={() => handleEvidenceClick("E01")}>
+                Evidence: [E01][E04][E05][E15] <Icon name="shield" size={12} />
+              </span>
+            </div>
+
+            <div className="lens-four-metrics-grid">
+              <div className="lens-metric-box">
+                <span style={{ fontSize: "18px" }}>💵</span>
+                <strong>{d.financialData.cashPosition}</strong>
+                <small>{d.financialData.cashPeriod}</small>
+              </div>
+              <div className="lens-metric-box">
+                <span style={{ fontSize: "18px" }}>📈</span>
+                <strong>{d.financialData.revenue}</strong>
+                <small>{d.financialData.revenuePeriod}</small>
+              </div>
+              <div className="lens-metric-box">
+                <span style={{ fontSize: "18px" }}>⏳</span>
+                <strong>Into at least Q2 2028</strong>
+                <small>Company Guided Runway</small>
+              </div>
+              <div className="lens-metric-box">
+                <span style={{ fontSize: "18px" }}>🏦</span>
+                <strong>$110.0M Raised</strong>
+                <small>February 2026 Offering ($13.98/sh)</small>
+              </div>
+            </div>
+
+            {/* Financial Trend Table */}
+            <div className="lens-table-wrap" style={{ marginTop: "14px" }}>
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Reporting Period</th>
+                    <th>Cash & Marketable Securities</th>
+                    <th>Material Financial Context & Guidance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.financialData.fundingHistory.map((item, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{item.period}</strong></td>
+                      <td style={{ color: "#4f46e5", fontWeight: "700" }}>{item.cash}</td>
+                      <td style={{ color: "#475569" }}>{item.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="lens-sales-takeaway-bar" style={{ marginTop: "14px" }}>
+              <Icon name="trend" size={16} />
+              <div>
+                <strong>FINANCIAL SALES IMPLICATION: </strong>
+                <span>{d.financialData.salesImplication}</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* SECTION 07 & 08: CMC & REGULATORY INTELLIGENCE (2 Column Layout) */}
+          <div className="lens-two-col-grid">
+            {/* SECTION 07: CMC & MANUFACTURING */}
+            <Card className="lens-section-card">
+              <div className="lens-card-header-bar">
                 <div>
-                  <Badge tone={r[1].includes("High") ? "danger" : r[1].includes("Medium") ? "warning" : "neutral"}>{r[1]}</Badge>
-                  <strong>{r[0]}</strong>
+                  <span className="section-number-pill">07</span>
+                  <strong style={{ fontSize: "15px", color: "#0f172a", marginLeft: "6px" }}>CMC & Manufacturing</strong>
                 </div>
-                <p><span>Evidence:</span> {r[2]}</p>
-                <p><span>Impact:</span> {r[3]}</p>
-                <p><span>Mitigation:</span> {r[4]}</p>
+                <span className="badge badge-success">Relevance: HIGH</span>
               </div>
-            ))}
-          </div>
-        </ReportSection>
+              <div className="lens-data-list">
+                <div><span>Model:</span> <strong>{d.cmcData.manufacturingModel}</strong></div>
+                <div><span>Facilities:</span> <strong>{d.cmcData.facilities}</strong></div>
+                <div><span>Upcoming Need:</span> <strong>{d.cmcData.upcomingRequirements}</strong></div>
+              </div>
+              <div className="validation-sub-card">
+                <small>WHAT SALES SHOULD VALIDATE:</small>
+                <ul>
+                  {d.cmcData.validationChecklist.map((c, i) => <li key={i}>{c}</li>)}
+                </ul>
+              </div>
+            </Card>
 
-        {/* 15. Account Timeline */}
-        <ReportSection n={15} title="Account Timeline" subtitle="Chronology of corporate restructuring, clinical milestones and financing events.">
-          <div className="timeline">
-            {d.timeline.map((item, i) => (
-              <div className={item.highlight ? "highlight" : ""} key={i}>
-                <span className="timeline-dot" />
-                <time>{item.date}</time>
+            {/* SECTION 08: REGULATORY INTELLIGENCE */}
+            <Card className="lens-section-card">
+              <div className="lens-card-header-bar">
                 <div>
-                  <Badge tone={item.highlight ? "orange" : "neutral"}>{item.type}</Badge>
-                  <h3>{item.event}</h3>
-                  <p>Evidence: <Evidence id={item.evidence.replace(/[\[\]]/g, "").split("][")[0]} onClick={handleEvidenceClick} /> · Confidence: {item.confidence}</p>
+                  <span className="section-number-pill">08</span>
+                  <strong style={{ fontSize: "15px", color: "#0f172a", marginLeft: "6px" }}>Regulatory Milestones</strong>
+                </div>
+                <span className="badge badge-blue">4 Verified Events</span>
+              </div>
+              <div className="lens-table-wrap">
+                <table className="lens-clean-table" style={{ fontSize: "12px" }}>
+                  <thead>
+                    <tr>
+                      <th>Program</th>
+                      <th>Regulatory Event</th>
+                      <th>Next Event / Timing</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.regulatoryEvents.map((r, idx) => (
+                      <tr key={idx}>
+                        <td><strong>{r.program}</strong></td>
+                        <td>{r.event} <small style={{ color: "#64748b" }}>({r.date})</small></td>
+                        <td><strong>{r.nextEvent}</strong> ({r.timing})</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+
+          {/* SECTION 09: COMPETITIVE LANDSCAPE & TOP 3 DEEP DIVE */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">09</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Competitive Landscape & Top 3 Competitor Impact</strong>
+              </div>
+              <span className="lens-source-trigger" onClick={() => handleEvidenceClick("E18")}>
+                Evidence: [E18][E19] <Icon name="shield" size={12} />
+              </span>
+            </div>
+
+            {/* Top 3 Competitors Cards */}
+            <div className="lens-competitors-grid">
+              {d.topCompetitors.map((comp, idx) => (
+                <div key={idx} className="competitor-card">
+                  <div className="comp-header">
+                    <strong>{comp.name}</strong>
+                    <span className={`badge ${comp.salesRelevance === "High" ? "badge-danger" : "badge-warning"}`}>
+                      {comp.salesRelevance} Relevance
+                    </span>
+                  </div>
+                  <div className="comp-body">
+                    <div><span>Target & Arena:</span> <p>{comp.competitiveArea}</p></div>
+                    <div><span>Recent Action:</span> <p>{comp.recentlyDid}</p></div>
+                    <div><span>Technical Focus:</span> <p>{comp.technicalFocus}</p></div>
+                    <div className="impact-box">
+                      <span>IMPACT ON SUTRO:</span>
+                      <p>{comp.effectOnAccount}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* General Landscape Strip */}
+            <div className="landscape-summary-strip">
+              <small>ADDITIONAL PEER LANDSCAPE:</small>
+              <div className="landscape-pill-row">
+                {d.competitiveLandscape.map((c, i) => (
+                  <span key={i} className="landscape-pill">
+                    <strong>{c.name}:</strong> {c.relevance}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: CONTACTS (10. Key Contact Information & Buying Committee) */}
+      {/* ========================================================================= */}
+      {activeTab === "CONTACTS" && (
+        <div className="lens-tab-content-pane">
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">10</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Key Contact Information & Buying Committee Coverage</strong>
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <span className="badge badge-success">6 Verified Stakeholders</span>
+                <span className="badge badge-blue">85% Buying Committee Covered</span>
+              </div>
+            </div>
+
+            <div className="lens-table-wrap">
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Contact & Verified Info</th>
+                    <th>Buying Committee Role</th>
+                    <th>What They Do & Why Relevant</th>
+                    <th>Recent Corporate Context</th>
+                    <th>Recommended Angle</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.contacts.map((ct, idx) => (
+                    <tr key={idx}>
+                      <td>
+                        <div className="lens-contact-cell-layout">
+                          <div className="avatar-chip">{ct.name.split(" ").map(n => n[0]).join("")}</div>
+                          <div>
+                            <strong>{ct.name}</strong>
+                            <small>{ct.title}</small>
+                            <div className="contact-email">
+                              <code>{ct.email}</code>
+                              <button className="copy-btn" onClick={() => { navigator.clipboard.writeText(ct.email); notify(`Copied ${ct.email}`); }}>Copy</button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="lens-buying-role-pill">{ct.buyingRole}</span>
+                        <div style={{ fontSize: "10px", color: "#64748b", marginTop: "4px" }}>{ct.function}</div>
+                      </td>
+                      <td style={{ fontSize: "12px", color: "#334155", maxWidth: "240px" }}>
+                        <p style={{ margin: "0 0 4px" }}><strong>Role:</strong> {ct.whatTheyDo}</p>
+                        <p style={{ margin: 0, color: "#4f46e5" }}><strong>Relevance:</strong> {ct.whyRelevant}</p>
+                      </td>
+                      <td style={{ fontSize: "11.5px", color: "#475569", maxWidth: "200px" }}>
+                        {ct.recentContext}
+                      </td>
+                      <td style={{ fontSize: "11.5px", color: "#1e1b4b", maxWidth: "220px", background: "#f8fafc", padding: "8px", borderRadius: "6px" }}>
+                        💡 {ct.recommendedAngle}
+                      </td>
+                      <td>
+                        <Button variant="primary" style={{ height: "30px", fontSize: "11.5px" }} onClick={() => setActiveTab("OUTREACH")}>
+                          Draft Message
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Buying Committee Role Coverage Summary */}
+            <div className="lens-committee-coverage-bar">
+              <div className="role-chip verified"><Icon name="check" size={12} /> Clinical Decision Maker (CMO Anne Borgman)</div>
+              <div className="role-chip verified"><Icon name="check" size={12} /> Technical / CMC Decision Maker (CTO Venkatesh Srinivasan)</div>
+              <div className="role-chip verified"><Icon name="check" size={12} /> Economic Approver (CFO Greg Chow / CEO Jane Chung)</div>
+              <div className="role-chip verified"><Icon name="check" size={12} /> Operational Evaluator (Director ClinOps Mark Baczkowski)</div>
+              <div className="role-chip gap"><Icon name="help" size={12} /> Vendor / Procurement Owner (Not Publicly Verified)</div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 5: STRATEGY (11. Opportunity, 12. Risks, 13. Timeline, 14. Strategy, 15. Next Best Action) */}
+      {/* ========================================================================= */}
+      {activeTab === "STRATEGY" && (
+        <div className="lens-tab-content-pane">
+          {/* SECTION 15: NEXT BEST ACTION (Promoted to Top of Strategy) */}
+          <Card className="lens-section-card hero-action-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill active">15</span>
+                <strong style={{ fontSize: "17px", color: "#0f172a", marginLeft: "8px" }}>Next Best Action Playbook</strong>
+              </div>
+              <span className="badge badge-success">Recommended Immediate Motion</span>
+            </div>
+
+            <div className="lens-nba-container">
+              <div className="nba-primary-action-box">
+                <div className="nba-flag">PRIMARY SALES MOTION</div>
+                <h2>{d.nextBestAction.primaryAction}</h2>
+                <p>{d.nextBestAction.whyThisAction}</p>
+              </div>
+
+              <div className="nba-grid-details">
+                <div className="nba-card">
+                  <small>WHO & WHY THEM</small>
+                  <strong>{d.nextBestAction.who}</strong>
+                  <p>{d.nextBestAction.whyThem}</p>
+                </div>
+                <div className="nba-card">
+                  <small>WHY NOW</small>
+                  <strong>Active Transition Window</strong>
+                  <p>{d.nextBestAction.whyNow}</p>
+                </div>
+                <div className="nba-card">
+                  <small>CONVERSATION ANGLE</small>
+                  <strong>Milestone Predictability</strong>
+                  <p>{d.nextBestAction.conversationAngle}</p>
+                </div>
+                <div className="nba-card">
+                  <small>DESIRED OUTCOME</small>
+                  <strong>20-Minute Exploratory Call</strong>
+                  <p>{d.nextBestAction.desiredOutcome}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </ReportSection>
 
-        {/* 16. Sales Strategy */}
-        <ReportSection n={16} title="Sales Strategy" subtitle="Recommended entry points: CTO (CMC angle) and CMO (Clinical Ops angle).">
-          <div className="strategy-card">
-            <div className="strategy-main">
-              <span>RECOMMENDED VALUE PROPOSITION (CONDITIONAL)</span>
-              <h3>Help a lean team execute STRO-006 & STRO-227 faster with predictable timelines.</h3>
-              <p>Make no unsupported claims regarding Sutro drug quality or arbitrary cost savings. Lead with lean team operational bandwidth.</p>
-              <div className="strategy-people">
-                <div><span>Primary Entry (CMC)</span><strong>Venkatesh Srinivasan (CTO)</strong></div>
-                <div><span>Primary Entry (Clin Ops)</span><strong>Anne Borgman, MD (CMO)</strong></div>
-                <div><span>Secondary Stakeholder</span><strong>Greg Chow (CFO)</strong></div>
+              <div className="nba-discovery-box">
+                <strong><Icon name="spark" size={14} /> SUGGESTED DISCOVERY QUESTIONS:</strong>
+                <ul>
+                  {d.nextBestAction.discoveryQuestions.map((q, i) => (
+                    <li key={i}>{q}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="nba-footer-row">
+                <div><span>Do Not Assume:</span> {d.nextBestAction.doNotAssume}</div>
+                <div><span>Fallback Action:</span> {d.nextBestAction.fallbackAction}</div>
               </div>
             </div>
-          </div>
-          <div className="strategy-columns" style={{ marginTop: "14px" }}>
-            <div>
-              <h3>Key Talking Points</h3>
-              <ul>
-                <li>Three parallel programs moving to clinic in short window [E01][E03]</li>
-                <li>Lean team execution: how internal vs vendor work is divided [E07]</li>
-                <li>Externalized manufacturing: capacity & analytical support bottlenecks [E08]</li>
-                <li>Dose optimization at STRO-004 and future expansion cohorts [E02]</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Discovery Questions</h3>
-              <ul>
-                <li>How are CROs/CDMOs selected for new programs, and who signs off?</li>
-                <li>Is STRO-006 start-up already staffed, and what gaps remain?</li>
-                <li>What is the plan for STRO-227 CMC and IND-enabling work?</li>
-                <li>Where does the team feel stretched following the restructuring?</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Anticipated Objections</h3>
-              <ul>
-                <li>"We already have vendors in place." → Ask which phases remain open.</li>
-                <li>"Budget is tight after restructuring." → Emphasize milestone predictability.</li>
-                <li>"We prefer vendor consolidation." → Validate current supplier scope.</li>
-              </ul>
-            </div>
-          </div>
-        </ReportSection>
+          </Card>
 
-        {/* 17. Next Best Action */}
-        <ReportSection n={17} title="Next Best Action" subtitle="Primary: Confirm STRO-006 first patient dosed, then send tailored outreach to CTO & CMO.">
-          <div className="nba-card">
-            <div className="nba-icon"><Icon name="arrow" size={24} /></div>
-            <div>
-              <span>NEXT BEST ACTION (NBA)</span>
-              <h2>Confirm STRO-006 status, then message Chief Technical Officer & Chief Medical Officer.</h2>
-              <p>Start-up and IND triggers are active in Q4 2026. Target discovery call to reveal vendor decision owners and open gaps.</p>
-              <div className="nba-meta">
-                <span><small>Confidence</small><strong>Medium</strong></span>
-                <span><small>Evidence</small><Evidence id="E01" onClick={handleEvidenceClick} /> <Evidence id="E03" onClick={handleEvidenceClick} /> <Evidence id="E14" onClick={handleEvidenceClick} /></span>
+          {/* SECTION 11: COMMERCIAL OPPORTUNITY (Hypotheses) */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">11</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Commercial Opportunity Hypotheses</strong>
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b" }}>
+                Strict Rule: <em>Presented as potential opportunities requiring discovery validation.</em>
               </div>
             </div>
-          </div>
-          <ol className="action-steps" style={{ marginTop: "14px" }}>
-            {[
-              "Check ClinicalTrials.gov & PRs to confirm if STRO-006 has dosed its first patient.",
-              "Send short tailored CMC email to CTO Venkatesh Srinivasan.",
-              "Send clinical ops introduction email to CMO Dr. Anne Borgman.",
-              "Pull NCT07227168 trial record for site and investigator details.",
-              "Monitor Q3 2026 financial release for updated cash burn and timeline guidance."
-            ].map((x, i) => <li key={i}><span>{i + 1}</span>{x}</li>)}
-          </ol>
-        </ReportSection>
 
-        {/* 18. Outreach Messages */}
-        <ReportSection n={18} title="Outreach Messages" subtitle="Custom human-reviewed drafts grounded strictly in public research (no invented data).">
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {d.outreachMessages.map((msg, i) => (
-              <div key={i} className="card" style={{ padding: "16px 20px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <strong style={{ color: "var(--navy-950)", fontSize: "14px" }}>{msg.title}</strong>
-                  <Button variant="secondary" icon="share" onClick={() => { navigator.clipboard?.writeText(msg.body); notify("Draft copied to clipboard"); }}>Copy text</Button>
-                </div>
-                <div style={{ fontSize: "12px", color: "var(--slate-500)", marginBottom: "8px" }}>
-                  <span>Recipient: <strong>{msg.recipient}</strong></span> · <span>Subject: <strong>{msg.subject}</strong></span>
-                </div>
-                <pre style={{ background: "var(--slate-50)", border: "1px solid var(--slate-200)", padding: "14px", borderRadius: "8px", fontSize: "12.5px", whiteSpace: "pre-wrap", fontFamily: "inherit", color: "var(--navy-950)", margin: 0 }}>
-                  {msg.body}
-                </pre>
-              </div>
-            ))}
-          </div>
-        </ReportSection>
+            <div className="lens-table-wrap">
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Potential Service Opportunity</th>
+                    <th>Why We See It (Intelligence Basis)</th>
+                    <th>Confidence</th>
+                    <th>Status</th>
+                    <th>What Sales Needs to Validate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.commercialOpportunities.map((op, idx) => (
+                    <tr key={idx}>
+                      <td><strong style={{ color: "#1e1b4b" }}>{op.title}</strong></td>
+                      <td style={{ fontSize: "12.5px", color: "#334155" }}>{op.whyWeSeeIt}</td>
+                      <td><span className="badge badge-blue">{op.confidence}</span></td>
+                      <td>
+                        <span className="lens-opportunity-status-pill discovery">
+                          {op.status}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: "12px", color: "#475569" }}>{op.validationRequired}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
 
-        {/* 19. Research Gaps */}
-        <ReportSection n={19} title="Research Gaps" subtitle="9 verified gaps to resolve during discovery or follow-up intelligence scans.">
-          <div className="gap-grid">
-            {d.researchGaps.map((g, i) => (
-              <div key={i}>
-                <span>?</span>
+          {/* SECTION 12 & 13: RISKS & ACCOUNT TIMELINE (2 Column Grid) */}
+          <div className="lens-two-col-grid">
+            {/* SECTION 12: RISKS & DEAL BLOCKERS */}
+            <Card className="lens-section-card">
+              <div className="lens-card-header-bar">
                 <div>
-                  <strong>{g[1]}</strong>
-                  <p>Category: {g[0]} · Action: {g[3]}</p>
+                  <span className="section-number-pill">12</span>
+                  <strong style={{ fontSize: "15px", color: "#0f172a", marginLeft: "6px" }}>Risks & Deal Blockers</strong>
                 </div>
-                <Badge tone={g[4] === "High" ? "danger" : "warning"}>{g[4]} Priority</Badge>
+                <span className="badge badge-warning">4 Identified</span>
               </div>
-            ))}
-          </div>
-        </ReportSection>
-
-        {/* 20. Evidence & Source Ledger */}
-        <ReportSection n={20} title="Evidence & Source Ledger" subtitle="Traceable ledger of all 21 sources [E01 to E21] retrieved 5 Oct 2026.">
-          <div className="ledger-summary">
-            <div><strong>21</strong><span>Total citations</span></div>
-            <div><strong>8</strong><span>SEC filings</span></div>
-            <div><strong>68%</strong><span>Avg confidence</span></div>
-            <div><strong>5 Oct 2026</strong><span>Research date</span></div>
-          </div>
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>ID</th><th>Claim</th><th>Source</th><th>Type</th><th>Published</th><th>Confidence</th><th>Action</th></tr></thead>
-              <tbody>
-                {sutroEvidenceLedger.map((ev) => (
-                  <tr key={ev.id}>
-                    <td><button className="evidence-marker" onClick={() => setActiveEvidence(ev)}>[{ev.id}]</button></td>
-                    <td>{ev.claim}</td>
-                    <td>{ev.source}</td>
-                    <td><Badge tone="blue">{ev.type}</Badge></td>
-                    <td>{ev.published}</td>
-                    <td><Badge tone={ev.confidence.includes("High") ? "success" : ev.confidence.includes("Good") ? "blue" : "warning"}>{ev.confidence}</Badge></td>
-                    <td>
-                      <a href={ev.url} target="_blank" rel="noreferrer" className="btn btn-icon" title="Open source URL">
-                        <Icon name="external" size={14} />
-                      </a>
-                    </td>
-                  </tr>
+              <div className="lens-risks-list">
+                {d.risks.map((r, i) => (
+                  <div key={i} className="risk-item">
+                    <div className="risk-head">
+                      <strong>{r.risk}</strong>
+                      <span className={`badge ${r.severity === "High" ? "badge-danger" : "badge-warning"}`}>{r.severity} Severity</span>
+                    </div>
+                    <p style={{ margin: "4px 0", fontSize: "11.5px", color: "#475569" }}>{r.whyItMatters}</p>
+                    <div className="risk-response">
+                      <span>Sales Response: </span>{r.response}
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </ReportSection>
+              </div>
+            </Card>
 
-        {/* 21. Methodology / Trust */}
-        <ReportSection n={21} title="Methodology / Trust" subtitle="100-Point Scoring Model adapted for clinical-stage biotechnology.">
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Dimension</th><th>Score</th><th>Reason</th><th>Confidence</th></tr></thead>
-              <tbody>
-                {d.scoringBreakdown.map((row, i) => (
-                  <tr key={i} style={i === d.scoringBreakdown.length - 1 ? { fontWeight: "bold", background: "var(--slate-50)" } : {}}>
-                    <td>{row[0]}</td>
-                    <td><strong>{row[1]}</strong></td>
-                    <td>{row[2]}</td>
-                    <td><Badge tone={row[3].includes("High") ? "success" : row[3].includes("Moderate") ? "blue" : "warning"}>{row[3]}</Badge></td>
-                  </tr>
+            {/* SECTION 13: ACCOUNT TIMELINE */}
+            <Card className="lens-section-card">
+              <div className="lens-card-header-bar">
+                <div>
+                  <span className="section-number-pill">13</span>
+                  <strong style={{ fontSize: "15px", color: "#0f172a", marginLeft: "6px" }}>Commercial Account Timeline</strong>
+                </div>
+                <span className="lens-source-trigger" onClick={() => handleEvidenceClick("E01")}>
+                  Traceable [E01-E13] <Icon name="shield" size={12} />
+                </span>
+              </div>
+              <div className="lens-timeline-stream">
+                {d.accountTimeline.map((item, i) => (
+                  <div key={i} className="timeline-event-row">
+                    <div className="timeline-date">{item.date}</div>
+                    <div className="timeline-node" />
+                    <div className="timeline-content">
+                      <strong>{item.event}</strong>
+                      <p>{item.whyItMatters}</p>
+                      <button className="lens-evidence-tag-btn" onClick={() => handleEvidenceClick(item.evidenceId)}>
+                        [{item.evidenceId}]
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </Card>
           </div>
 
-          <div className="method-copy" style={{ marginTop: "16px" }}>
-            <div>
-              <strong>Compliance & Claim Controls</strong>
-              <p>• No invented contacts, emails, vendors or revenue.<br />• Company statements labeled as company claims.<br />• Funding & trial starts treated as demand signals, never buying intent.<br />• Unknown values never replaced with plausible text.</p>
+          {/* SECTION 14: SALES STRATEGY & POSITIONING */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">14</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Sales Strategy & Positioning Framework</strong>
+              </div>
+              <span className="badge badge-blue">Executive Playbook</span>
             </div>
-            <div>
-              <strong>Research Completeness (76%)</strong>
-              <p>14 elements complete (including access & reimbursement as N/A), 10 partial, 1 not researched (white space CRM data).</p>
+            <div className="lens-strategy-matrix">
+              <div><span>Recommended Entry Point:</span> <strong>{d.salesStrategy.recommendedEntryPoint}</strong></div>
+              <div><span>Primary Persona:</span> <strong>{d.salesStrategy.primaryPersona}</strong></div>
+              <div><span>Secondary Persona:</span> <strong>{d.salesStrategy.secondaryPersona}</strong></div>
+              <div><span>Core Conversation Theme:</span> <strong>{d.salesStrategy.conversationTheme}</strong></div>
+              <div><span>Positioning Statement:</span> <strong>{d.salesStrategy.positioning}</strong></div>
+              <div><span>Do Not Assume:</span> <strong style={{ color: "#b91c1c" }}>{d.salesStrategy.doNotAssume}</strong></div>
             </div>
-            <div>
-              <strong>Confidence Assessment (68%)</strong>
-              <p>Strong source authority for pipeline and SEC filings, reduced by assumed seller, unknown incumbent vendors, and unverified STRO-006 dosing start.</p>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 6: OUTREACH (16. Multi-Channel Evidence-Grounded Outreach) */}
+      {/* ========================================================================= */}
+      {activeTab === "OUTREACH" && (
+        <div className="lens-tab-content-pane">
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">16</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Personalized Outreach Sequences (Evidence Grounded)</strong>
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b" }}>
+                Quality Standard: <em>Zero unverified assumptions · Professional peer tone</em>
+              </div>
             </div>
-          </div>
-        </ReportSection>
-      </main>
+
+            <div className="lens-outreach-drafts-grid">
+              {d.outreachDrafts.map((draft, idx) => (
+                <div key={idx} className="outreach-draft-card">
+                  <div className="draft-header">
+                    <div>
+                      <span className="channel-tag">{draft.channel}</span>
+                      <strong>{draft.contactName}</strong> <small>({draft.title})</small>
+                    </div>
+                    <Button variant="secondary" style={{ height: "28px", fontSize: "11px" }} onClick={() => { navigator.clipboard.writeText(draft.body); notify("Copied message to clipboard!"); }}>
+                      Copy Draft
+                    </Button>
+                  </div>
+                  <div className="draft-subject">
+                    <small>Subject: </small><strong>{draft.subject}</strong>
+                  </div>
+                  <pre className="draft-body">{draft.body}</pre>
+                  <div className="draft-footer">
+                    <div><span>Confidence: </span><span className="badge badge-success" style={{ fontSize: "10px" }}>{draft.confidence}</span></div>
+                    <div className="claims-to-avoid"><span>Claims to Avoid: </span>{draft.claimsToAvoid}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 7: EVIDENCE (17. Research Gaps, 18. Evidence Ledger, 19. Quality) */}
+      {/* ========================================================================= */}
+      {activeTab === "EVIDENCE" && (
+        <div className="lens-tab-content-pane">
+          {/* SECTION 17: RESEARCH GAPS & DISCOVERY CHECKLIST */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">17</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Research Gaps & Discovery Checklist</strong>
+              </div>
+              <span className="badge badge-warning">5 Strategic Gaps Identified</span>
+            </div>
+            <div className="lens-table-wrap">
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Identified Research Gap / Unknown</th>
+                    <th>Priority</th>
+                    <th>How Sales Can Validate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.researchGaps.map((gap, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{gap.category}</strong></td>
+                      <td style={{ color: "#334155", fontWeight: "600" }}>{gap.gap}</td>
+                      <td>
+                        <span className={`badge ${gap.priority === "High" ? "badge-danger" : "badge-warning"}`}>
+                          {gap.priority}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: "12px", color: "#475569" }}>{gap.validationAction}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* SECTION 18: EVIDENCE & SOURCE LEDGER */}
+          <Card className="lens-section-card">
+            <div className="lens-card-header-bar">
+              <div>
+                <span className="section-number-pill">18</span>
+                <strong style={{ fontSize: "16px", color: "#0f172a", marginLeft: "8px" }}>Evidence & Source Ledger (Complete Audit Trail)</strong>
+              </div>
+              <span className="badge badge-success">21 Verified Sources</span>
+            </div>
+
+            <div className="lens-table-wrap">
+              <table className="lens-clean-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Verified Claim & Fact</th>
+                    <th>Source Name</th>
+                    <th>Source Type</th>
+                    <th>Published</th>
+                    <th>Confidence</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sutroEvidenceLedger.map((ev) => (
+                    <tr key={ev.id} onClick={() => setActiveEvidence(ev)} style={{ cursor: "pointer" }}>
+                      <td><strong style={{ color: "#4f46e5" }}>[{ev.id}]</strong></td>
+                      <td style={{ fontSize: "12px", color: "#334155", maxWidth: "340px" }}>{ev.claim}</td>
+                      <td><strong>{ev.source}</strong></td>
+                      <td><span className="lens-source-type-pill">{ev.type}</span></td>
+                      <td style={{ color: "#64748b", fontSize: "11.5px" }}>{ev.published}</td>
+                      <td><span className="badge badge-success">{ev.confidence}</span></td>
+                      <td>
+                        <Button variant="secondary" style={{ height: "26px", fontSize: "11px", padding: "0 8px" }} onClick={(e) => { e.stopPropagation(); setActiveEvidence(ev); }}>
+                          Inspect
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* PDF PREVIEW MODAL */}
+      {showPdfPreview && <PdfPreviewModal onClose={() => setShowPdfPreview(false)} onDownload={handleDownloadPDF} />}
+
+      {/* EVIDENCE DETAIL DRAWER (No Raw URL Clutter in Text) */}
+      {activeEvidence && (
+        <>
+          <div className="drawer-overlay" onClick={() => setActiveEvidence(null)} />
+          <aside className="source-drawer">
+            <div className="drawer-head">
+              <div>
+                <span>EVIDENCE RECORD</span>
+                <h2>Evidence [{activeEvidence.id}]</h2>
+              </div>
+              <Button variant="icon" icon="close" onClick={() => setActiveEvidence(null)} />
+            </div>
+            <Badge tone={activeEvidence.confidence.includes("High") ? "success" : "warning"}>
+              <Icon name="shield" size={12} /> {activeEvidence.confidence} confidence
+            </Badge>
+            <blockquote style={{ margin: "14px 0", fontSize: "13px", fontStyle: "italic", borderLeft: "3px solid #4f46e5", paddingLeft: "12px", color: "var(--slate-700)", background: "#f8fafc", padding: "10px 12px", borderRadius: "0 8px 8px 0" }}>
+              “{activeEvidence.claim}”
+            </blockquote>
+            <div className="source-fields">
+              <div><span>Primary Source</span><strong>{activeEvidence.source}</strong></div>
+              <div><span>Source Type</span><strong>{activeEvidence.type}</strong></div>
+              <div><span>Published Date</span><strong>{activeEvidence.published}</strong></div>
+              <div><span>Retrieved / Verified Date</span><strong>{activeEvidence.retrieved}</strong></div>
+              <div><span>Verification Status</span><strong>{activeEvidence.verification}</strong></div>
+            </div>
+            <Button className="full-width" icon="external" onClick={() => window.open(activeEvidence.url, "_blank")}>
+              Open Official Source Link ↗
+            </Button>
+          </aside>
+        </>
+      )}
+
+      {toast && <div className="toast"><Icon name="check" />{toast}</div>}
     </div>
-
-    {/* PDF Preview Modal */}
-    {showPdfPreview && <PdfPreviewModal onClose={() => setShowPdfPreview(false)} onDownload={handleDownloadPDF} />}
-
-    {/* Evidence Detail Drawer */}
-    {activeEvidence && (
-      <>
-        <div className="drawer-overlay" onClick={() => setActiveEvidence(null)} />
-        <aside className="source-drawer">
-          <div className="drawer-head">
-            <div>
-              <span>EVIDENCE RECORD</span>
-              <h2>Evidence [{activeEvidence.id}]</h2>
-            </div>
-            <Button variant="icon" icon="close" onClick={() => setActiveEvidence(null)} />
-          </div>
-          <Badge tone={activeEvidence.confidence.includes("High") ? "success" : "warning"}>
-            <Icon name="shield" size={12} /> {activeEvidence.confidence} confidence
-          </Badge>
-          <blockquote style={{ margin: "14px 0", fontSize: "13px", fontStyle: "italic", borderLeft: "3px solid var(--orange-500)", paddingLeft: "12px", color: "var(--slate-700)" }}>
-            “{activeEvidence.claim}”
-          </blockquote>
-          <div className="source-fields">
-            <div><span>Source</span><strong>{activeEvidence.source}</strong></div>
-            <div><span>Source type</span><strong>{activeEvidence.type}</strong></div>
-            <div><span>Published</span><strong>{activeEvidence.published}</strong></div>
-            <div><span>Retrieved</span><strong>{activeEvidence.retrieved}</strong></div>
-            <div><span>Verification Status</span><strong>{activeEvidence.verification}</strong></div>
-          </div>
-          <Button className="full-width" icon="external" onClick={() => window.open(activeEvidence.url, "_blank")}>
-            Open official source link
-          </Button>
-          <div className="source-method" style={{ marginTop: "14px" }}>
-            <Icon name="shield" />
-            <p><strong>Traceability Guarantee:</strong> Official government SEC filings and company releases provide primary evidence for this claim.</p>
-          </div>
-        </aside>
-      </>
-    )}
-
-    {toast && <div className="toast"><Icon name="check" />{toast}</div>}
-  </div>;
+  );
 }
 
 function SignalList({ title, items }: { title: string; items: string[] }) { 
@@ -1164,28 +3558,55 @@ function Settings() {
 }
 
 export default function App() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [page, setPage] = useState<Page>("dashboard");
+  const [authenticated, setAuthenticated] = useState(true);
+  const [page, setPage] = useState<Page>("campaigns");
   const [campaigns, setCampaigns] = useState<string[][]>(campaignRows);
+  const [activeCampaign, setActiveCampaign] = useState<string>("North America Oncology ADC Growth Campaign 2026");
   const [campaignSuccess, setCampaignSuccess] = useState<string | null>(null);
 
   const handleSaveCampaign = (newCamp: string[]) => {
     setCampaigns((prev) => [newCamp, ...prev]);
+    setActiveCampaign(newCamp[0]);
     setCampaignSuccess(`"${newCamp[0]}" has been saved and added to your campaigns list.`);
     setPage("campaigns");
   };
 
   if (!authenticated) return <Login onLogin={() => setAuthenticated(true)} />;
+  
   let content: ReactNode;
-  if (page === "dashboard") content = <Dashboard setPage={setPage} />;
-  else if (page === "campaigns") content = <Campaigns setPage={setPage} campaigns={campaigns} successMessage={campaignSuccess} onClearSuccess={() => setCampaignSuccess(null)} />;
-  else if (page === "create-campaign") content = <CreateCampaign setPage={setPage} onSave={handleSaveCampaign} />;
-  else if (page === "accounts") content = <Accounts setPage={setPage} />;
-  else if (page === "run-research") content = <RunResearch setPage={setPage} />;
-  else if (page === "running") content = <Running setPage={setPage} />;
-  else if (page === "results") content = <Results setPage={setPage} />;
-  else if (page === "report") content = <Report setPage={setPage} />;
-  else content = <Settings />;
-  if (page === "running") return content;
-  return <AppShell page={page} setPage={setPage} onSignOut={() => { setAuthenticated(false); setPage("dashboard"); }}>{content}</AppShell>;
+  if (page === "campaigns" || page === "dashboard") {
+    content = (
+      <Campaigns 
+        setPage={setPage} 
+        campaigns={campaigns} 
+        successMessage={campaignSuccess} 
+        onClearSuccess={() => setCampaignSuccess(null)}
+        onUseCampaign={(name) => {
+          setActiveCampaign(name);
+          setPage("accounts");
+        }}
+      />
+    );
+  } else if (page === "create-campaign") {
+    content = <CreateCampaign setPage={setPage} onSave={handleSaveCampaign} />;
+  } else if (page === "accounts") {
+    content = <Accounts setPage={setPage} activeCampaign={activeCampaign} />;
+  } else if (page === "report") {
+    content = <Report setPage={setPage} activeCampaign={activeCampaign} />;
+  } else {
+    content = <Settings />;
+  }
+
+  return (
+    <AppShell 
+      page={page} 
+      setPage={setPage} 
+      activeCampaign={activeCampaign}
+      setActiveCampaign={setActiveCampaign}
+      campaigns={campaigns}
+      onSignOut={() => { setAuthenticated(false); setPage("campaigns"); }}
+    >
+      {content}
+    </AppShell>
+  );
 }
