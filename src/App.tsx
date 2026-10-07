@@ -299,12 +299,11 @@ function AppShell({ page, setPage, onSignOut, activeCampaign, setActiveCampaign,
           <div className="lens-topbar-left">
             {/* Title / Breadcrumbs */}
             <div className="lens-breadcrumb-trail">
-              <strong style={{ textTransform: "capitalize", fontSize: "14px", color: "#1e293b" }}>
-                {page === "create-campaign" ? "Create Campaign" : page === "report" ? "Company Intelligence" : page}
+              <span className="lens-crumb-parent">Home</span>
+              <span className="lens-crumb-sep">/</span>
+              <strong className="lens-crumb-current">
+                {page === "create-campaign" ? "Create Campaign" : page === "report" ? "Company Intelligence" : page === "accounts" ? "Accounts" : page === "campaigns" ? "Campaigns" : page}
               </strong>
-              <div style={{ fontSize: "11px", color: "#94a3b8" }}>
-                Home &nbsp;/&nbsp; <span style={{ textTransform: "capitalize" }}>{page}</span>
-              </div>
             </div>
           </div>
 
@@ -318,8 +317,8 @@ function AppShell({ page, setPage, onSignOut, activeCampaign, setActiveCampaign,
               />
               <kbd>⌘K</kbd>
             </div>
-            <button className="lens-icon-btn" onClick={() => setPage("settings")} title="Settings">
-              <Icon name="settings" size={17} />
+            <button className="lens-topbar-icon-btn" onClick={() => setPage("settings")} title="Settings">
+              <Icon name="settings" size={16} />
             </button>
           </div>
         </header>
